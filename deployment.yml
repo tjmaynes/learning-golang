@@ -1,0 +1,8 @@
+livenessProbe:
+  httpGet:
+    path: /ping
+    port: 3000
+readinessProbe:
+  httpGet:
+    path: /ping
+    port: 3000
