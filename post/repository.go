@@ -1,10 +1,10 @@
-package posts
+package post
 
 import (
 	"context"
 	"errors"
 
-	db "github.com/tjmaynes/learning-golang/db"
+	"github.com/tjmaynes/learning-golang/db"
 )
 
 // Repository ..
@@ -28,7 +28,7 @@ type Repo struct {
 
 // FetchQuery ..
 func (repo *Repo) FetchQuery(ctx context.Context, query string, args ...interface{}) ([]*Post, error) {
-	rows, err := repo.DBConn.QueryContext(ctx, query, args)
+	rows, err := repo.DBConn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +53,12 @@ func (repo *Repo) FetchQuery(ctx context.Context, query string, args ...interfac
 
 // GetPosts ..
 func (repo *Repo) GetPosts(ctx context.Context, limit int64) ([]*Post, error) {
-	return repo.FetchQuery(ctx, "SELECT id, title, content FROM post LIMIT ?", limit)
+	return repo.FetchQuery(ctx, "SELECT id, title, content FROM post LIMIT $1", limit)
 }
 
 // GetByPostID ..
 func (repo *Repo) GetByPostID(ctx context.Context, id int64) (*Post, error) {
-	rows, err := repo.FetchQuery(ctx, "SELECT id, title, content FROM post WHERE id =?", id)
+	rows, err := repo.FetchQuery(ctx, "SELECT id, title, content FROM post WHERE id = $1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -75,23 +75,13 @@ func (repo *Repo) GetByPostID(ctx context.Context, id int64) (*Post, error) {
 
 // AddPost ..
 func (repo *Repo) AddPost(ctx context.Context, post *Post) (*Post, error) {
-	stmt, err := repo.DBConn.PrepareContext(ctx, "INSERT INTO post (title, content) VALUES ($1, $2)")
+	var id int64
+	err := repo.DBConn.QueryRowContext(ctx, "INSERT INTO post (title, content) VALUES ($1, $2) RETURNING id", post.Title, post.Content).Scan(&id)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	res, err := stmt.ExecContext(ctx, post.Title, post.Content)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	newID, err := res.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	newPost := &Post{ID: newID, Title: post.Title, Content: post.Content}
+	newPost := &Post{ID: id, Title: post.Title, Content: post.Content}
 	return newPost, nil
 }
 

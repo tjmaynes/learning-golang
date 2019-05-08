@@ -1,4 +1,4 @@
-DB_SOURCE   ?= "postgres://postgres:password@localhost:5432?sslmode=disable"
+DB_SOURCE   ?= "postgres://postgres:password@localhost/learning-golang?sslmode=disable"
 DB_TYPE     ?= "postgres"
 DB_NAME     ?= "learning-golang-db"
 SERVER_PORT ?= "3000"
@@ -36,7 +36,13 @@ run_image:
 	 tjmaynes/learning-golang-server:$(TAG)
 
 run_migrations:
-	go run cmd/lgmigrate/main.go -db.source $(DB_SOURCE) -db.type $(DB_TYPE)
+	DATABASE_URL=$(DB_SOURCE) dbmate up
+
+run_seed:
+	DB_SOURCE=$(DB_SOURCE) \
+	DB_TYPE=$(DB_TYPE) \
+	SERVER_PORT=$(SERVER_PORT) \
+	GO111MODULE=on go run ./cmd/lgseed
 
 clean:
 	rm -rf dist/ vendor/

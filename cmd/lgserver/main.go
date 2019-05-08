@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/tjmaynes/learning-golang/app"
-	driver "github.com/tjmaynes/learning-golang/db"
+	"github.com/tjmaynes/learning-golang/db"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 
 	flag.Parse()
 
-	dbConn, err := driver.ConnectDB(*dbSource, *dbType)
+	dbConn, err := db.ConnectDB(*dbSource, *dbType)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)

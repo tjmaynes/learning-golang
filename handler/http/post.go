@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"strconv"
 
-	db "github.com/tjmaynes/learning-golang/db"
-	"github.com/tjmaynes/learning-golang/posts"
+	"github.com/tjmaynes/learning-golang/db"
+	"github.com/tjmaynes/learning-golang/post"
 )
 
 // NewPostHandler ,,
 func NewPostHandler(db *db.DB) *PostHandler {
-	return &PostHandler{Repo: posts.NewPostRepository(db)}
+	return &PostHandler{Repo: post.NewPostRepository(db)}
 }
 
 // PostHandler ..
 type PostHandler struct {
-	Repo posts.Repository
+	Repo post.Repository
 }
 
 // GetPosts ..
@@ -44,7 +44,7 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post := posts.Post{}
+	post := post.Post{}
 	json.NewDecoder(r.Body).Decode(&post)
 	newPost, err := p.Repo.AddPost(r.Context(), &post)
 	if err != nil {
@@ -90,7 +90,7 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post := posts.Post{}
+	post := post.Post{}
 	json.NewDecoder(r.Body).Decode(&post)
 
 	updatedPost, err := p.Repo.UpdatePost(r.Context(), &post)

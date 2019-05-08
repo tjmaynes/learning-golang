@@ -17,7 +17,6 @@ func ConnectDB(dbSource, dbType string) (*DB, error) {
 	if error != nil {
 		return nil, error
 	}
-	defer d.Close()
 
 	if err := d.Ping(); err != nil {
 		return nil, err

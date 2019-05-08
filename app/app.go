@@ -28,7 +28,7 @@ func addPostRouter(postHandler *handlers.PostHandler) http.Handler {
 	return router
 }
 
-func setupGracefulShutdown(server *http.Server, idleConnsClosed chan struct{}) {
+func setupGracefulShutdown(server *http.Server, db *db.DB, idleConnsClosed chan struct{}) {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
 	signal.Notify(sigint, syscall.SIGTERM)
@@ -37,6 +37,8 @@ func setupGracefulShutdown(server *http.Server, idleConnsClosed chan struct{}) {
 	if err := server.Shutdown(context.Background()); err != nil {
 		log.Printf("HTTP server Shutdown: %v", err)
 	}
+
+	defer db.Close()
 
 	close(idleConnsClosed)
 }
@@ -55,7 +57,7 @@ func Run(dbConn *db.DB, serverPort string) {
 		rt.Get("/ping", handlers.GetPingHandler)
 	})
 
-	server := http.Server{
+	server := &http.Server{
 		Addr:           fmt.Sprintf(":%s", serverPort),
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
@@ -66,7 +68,7 @@ func Run(dbConn *db.DB, serverPort string) {
 	log.Println(fmt.Sprintf("Running server on port %s...", serverPort))
 
 	idleConnsClosed := make(chan struct{})
-	go setupGracefulShutdown(&server, idleConnsClosed)
+	go setupGracefulShutdown(server, dbConn, idleConnsClosed)
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Printf("Server closed: %v", err)
