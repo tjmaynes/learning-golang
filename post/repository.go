@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tjmaynes/learning-golang/db"
+	driver "github.com/tjmaynes/learning-golang/driver"
 )
 
 // Repository ..
@@ -17,13 +17,13 @@ type Repository interface {
 }
 
 // NewPostRepository ..
-func NewPostRepository(DBConn *db.DB) Repository {
+func NewPostRepository(DBConn *driver.DB) Repository {
 	return &Repo{DBConn: DBConn}
 }
 
 // Repo ..
 type Repo struct {
-	DBConn *db.DB
+	DBConn *driver.DB
 }
 
 // FetchQuery ..

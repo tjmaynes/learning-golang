@@ -30,6 +30,7 @@ To run migrations, run the following command:
 make run_migrations
 ```
 
-## Notes
+## TODO
 
-### Context API
+- Have endpoints return JSON response.
+- Setup CI pipeline.

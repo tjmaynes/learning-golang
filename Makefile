@@ -1,4 +1,4 @@
-DB_SOURCE   ?= "postgres://postgres:password@localhost/learning-golang?sslmode=disable"
+DB_SOURCE   ?= "postgres://postgres:password@docker.for.mac.host.internal/learning-golang?sslmode=disable"
 DB_TYPE     ?= "postgres"
 DB_NAME     ?= "learning-golang-db"
 SERVER_PORT ?= "3000"

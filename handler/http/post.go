@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/tjmaynes/learning-golang/db"
+	driver "github.com/tjmaynes/learning-golang/driver"
 	"github.com/tjmaynes/learning-golang/post"
 )
 
 // NewPostHandler ,,
-func NewPostHandler(db *db.DB) *PostHandler {
+func NewPostHandler(db *driver.DB) *PostHandler {
 	return &PostHandler{Repo: post.NewPostRepository(db)}
 }
 

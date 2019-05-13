@@ -1,4 +1,4 @@
-package app
+package server
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/tjmaynes/learning-golang/db"
+	driver "github.com/tjmaynes/learning-golang/driver"
 	handlers "github.com/tjmaynes/learning-golang/handler/http"
 )
 
@@ -28,7 +28,7 @@ func addPostRouter(postHandler *handlers.PostHandler) http.Handler {
 	return router
 }
 
-func setupGracefulShutdown(server *http.Server, db *db.DB, idleConnsClosed chan struct{}) {
+func setupGracefulShutdown(server *http.Server, db *driver.DB, idleConnsClosed chan struct{}) {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
 	signal.Notify(sigint, syscall.SIGTERM)
@@ -44,7 +44,7 @@ func setupGracefulShutdown(server *http.Server, db *db.DB, idleConnsClosed chan 
 }
 
 // Run ..
-func Run(dbConn *db.DB, serverPort string) {
+func Run(dbConn *driver.DB, serverPort string) {
 	router := chi.NewRouter()
 	router.Use(
 		middleware.Recoverer,
