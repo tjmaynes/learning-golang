@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"io/ioutil"
 
 	driver "github.com/tjmaynes/learning-golang/driver"
 	"github.com/tjmaynes/learning-golang/post"
@@ -14,6 +15,7 @@ import (
 func main() {
 	var dbSource = flag.String("DB_SOURCE", os.Getenv("DB_SOURCE"), "Database url connection string.")
 	var dbType = flag.String("DB_TYPE", os.Getenv("DB_TYPE"), "Database Type, such as postgres, mysql, etc.")
+	var jsonSource = flag.String("JSON_SOURCE", os.Getenv("JSON_SOURCE"), "JSON Source, such as ./cmd/data.json.")
 
 	flag.Parse()
 
@@ -26,15 +28,17 @@ func main() {
 	postRepository := post.NewPostRepository(dbConn)
 	ctx := context.Background()
 
-	const jsonStream = `
-	[
-		{"Title": "My next great blog post", "Content": "Nothing to say right now..."},
-		{"Title": "Great Expectations", "Content": "Love this book"}
-	]
-	`
+	jsonFile, err := os.Open(*jsonSource)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+	defer jsonFile.Close()
+
+	jsonBytes, _ := ioutil.ReadAll(jsonFile)
 
 	var posts []post.Post
-	err = json.Unmarshal([]byte(jsonStream), &posts)
+	err = json.Unmarshal([]byte(jsonBytes), &posts)
 	if err != nil {
 		panic(err)
 	}

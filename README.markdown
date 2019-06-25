@@ -9,20 +9,19 @@
 
 ## Usage
 
+To install project dependencies, run the following command:
+```bash
+make install_dependencies
+```
+
+To run all tests, run the following command:
+```bash
+make test
+```
+
 To run the local database, run the following command:
 ```bash
 make run_local_db
-```
-
-To run the server, run the following command:
-```bash
-DB_SOURCE=<some-database-source> \
-make run_server
-```
-
-To build the server, run the following command:
-```bash
-make build_server
 ```
 
 To run migrations, run the following command:
@@ -30,7 +29,18 @@ To run migrations, run the following command:
 make run_migrations
 ```
 
-## TODO
+To seed the database, run the following command:
+```bash
+make run_seed_job
+```
 
-- Have endpoints return JSON response.
-- Setup CI pipeline.
+To build the server, run the following command:
+```bash
+make build_server
+```
+
+To run the server, run the following command:
+```bash
+DB_SOURCE=<some-database-source> \
+make run_server
+```

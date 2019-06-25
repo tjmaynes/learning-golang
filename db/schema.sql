@@ -28,7 +28,6 @@ CREATE TABLE public.post (
 --
 
 CREATE SEQUENCE public.post_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
