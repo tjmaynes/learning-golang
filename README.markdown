@@ -1,5 +1,7 @@
 # Learning Golang
 
+![https://godoc.org/github.com/tjmaynes/learning-golang](https://github.com/golang/gddo/blob/c782c79e0a3c3282dacdaaebeff9e6fd99cb2919/gddo-server/assets/status.svg)
+
 > CRUD service with PostgreSQL database calls. Based on this [tutorial](https://itnext.io/building-restful-web-api-service-using-golang-chi-mysql-d85f427dee54), added some complexity to further understand Golang. Ended up using PostgreSQL and consolidating `repository` and `models` into `posts`.
 
 ## Requirements
