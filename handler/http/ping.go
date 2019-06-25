@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	jsonHandler "github.com/tjmaynes/learning-golang/handler/json"
 )
 
 // GetPingHandler ..
@@ -11,5 +12,5 @@ func GetPingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondWithJSON(w, http.StatusCreated, map[string]string{"message": "PONG!"})
+	jsonHandler.CreateResponse(w, http.StatusOK, map[string]string{"message": "PONG!"})
 }

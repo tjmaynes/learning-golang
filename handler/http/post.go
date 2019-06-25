@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/tjmaynes/learning-golang/post"
+	jsonHandler "github.com/tjmaynes/learning-golang/handler/json"
 )
 
 // NewPostHandler ..
@@ -34,7 +35,7 @@ func (p *PostHandler) GetPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json, _ := json.Marshal(posts)
-	RespondWithJSON(w, http.StatusCreated, map[string][]byte{"data": json})
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
 }
 
 // AddPost ..
@@ -52,7 +53,7 @@ func (p *PostHandler) AddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json, _ := json.Marshal(newPost)
-	RespondWithJSON(w, http.StatusCreated, map[string][]byte{"data": json})
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
 }
 
 // GetPostByID ..
@@ -80,7 +81,7 @@ func (p *PostHandler) GetPostByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json, _ := json.Marshal(post)
-	RespondWithJSON(w, http.StatusCreated, map[string][]byte{"data": json})
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
 }
 
 // UpdatePost ..
@@ -100,7 +101,7 @@ func (p *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json, _ := json.Marshal(updatedPost)
-	RespondWithJSON(w, http.StatusCreated, map[string][]byte{"data": json})
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
 }
 
 // DeletePost ..
@@ -129,5 +130,5 @@ func (p *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := fmt.Sprintf("Deleted Post ID: %v", newID)
-	RespondWithJSON(w, http.StatusCreated, map[string]string{"message": message})
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]string{"message": message})
 }

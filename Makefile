@@ -9,9 +9,12 @@ TAG         := latest
 SEED_DATA_SOURCE := ./cmd/lgseed/data.json
 
 install_dependencies:
-	go get -u github.com/amacneil/dbmate
+	GO111MODULE=on go get -u github.com/amacneil/dbmate
 
 test:
+	DB_SOURCE=$(DB_SOURCE) \
+	DB_TYPE=$(DB_TYPE) \
+	SERVER_PORT=$(SERVER_PORT) \
 	GO111MODULE=on go test -v ./...
 
 run_local_db:
