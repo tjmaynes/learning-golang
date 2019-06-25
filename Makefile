@@ -1,9 +1,9 @@
-DB_TYPE     ?= "postgres"
-DB_NAME     ?= "learning-golang-db"
-DB_SOURCE   ?= "postgres://postgres:password@localhost/$(DB_NAME)?sslmode=disable"
-SERVER_PORT ?= "3000"
-GOARCH      := "amd64"
-GOOS        := "linux"
+DB_TYPE     ?= postgres
+DB_NAME     ?= learning-golang-db
+DB_SOURCE   ?= postgres://postgres:password@localhost/$(DB_NAME)?sslmode=disable
+SERVER_PORT ?= 3000
+GOARCH      := amd64
+GOOS        := linux
 CGO_ENABLED := 0
 TAG         := latest
 SEED_DATA_SOURCE := ./cmd/lgseed/data.json

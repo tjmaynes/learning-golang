@@ -2,9 +2,8 @@ package post
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-
-	driver "github.com/tjmaynes/learning-golang/driver"
 )
 
 // Repository ..
@@ -17,13 +16,13 @@ type Repository interface {
 }
 
 // NewPostRepository ..
-func NewPostRepository(DBConn *driver.DB) Repository {
+func NewPostRepository(DBConn *sql.DB) Repository {
 	return &Repo{DBConn: DBConn}
 }
 
 // Repo ..
 type Repo struct {
-	DBConn *driver.DB
+	DBConn *sql.DB
 }
 
 // FetchQuery ..

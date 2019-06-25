@@ -1,17 +1,17 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
-	driver "github.com/tjmaynes/learning-golang/driver"
 	"github.com/tjmaynes/learning-golang/post"
 )
 
-// NewPostHandler ,,
-func NewPostHandler(db *driver.DB) *PostHandler {
+// NewPostHandler ..
+func NewPostHandler(db *sql.DB) *PostHandler {
 	return &PostHandler{Repo: post.NewPostRepository(db)}
 }
 
