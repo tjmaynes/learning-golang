@@ -1,37 +1,37 @@
 package handler
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	handlers "github.com/tjmaynes/learning-golang/handler/http"
+	"github.com/tjmaynes/learning-golang/pkg/cart"
 )
 
-func addPostRouter(postHandler *handlers.PostHandler) http.Handler {
+func addCartRouter(cartHandler *handlers.CartHandler) http.Handler {
 	router := chi.NewRouter()
 
-	router.Get("/", postHandler.GetPosts)
-	router.Get("/{id:[0-9]+}", postHandler.GetPostByID)
-	router.Post("/", postHandler.AddPost)
-	router.Put("/{id:[0-9]+}", postHandler.UpdatePost)
-	router.Delete("/{id:[0-9]+}", postHandler.DeletePost)
+	router.Get("/", cartHandler.GetCartItems)
+	// router.Get("/{id:[0-9]+}", postHandler.GetPostByID)
+	// router.Post("/", postHandler.AddPost)
+	// router.Put("/{id:[0-9]+}", postHandler.UpdatePost)
+	// router.Delete("/{id:[0-9]+}", postHandler.DeletePost)
 
 	return router
 }
 
 // Initialize ..
-func Initialize(dbConn *sql.DB) http.Handler {
+func Initialize(cartService cart.Service) http.Handler {
 	router := chi.NewRouter()
 	router.Use(
 		middleware.Recoverer,
 		middleware.Logger,
 	)
 
-	postHandler := handlers.NewPostHandler(dbConn)
+	cartHandler := handlers.NewCartHandler(cartService)
 	router.Route("/", func(rt chi.Router) {
-		rt.Mount("/posts", addPostRouter(postHandler))
+		rt.Mount("/cart", addCartRouter(cartHandler))
 		rt.Get("/ping", handlers.GetPingHandler)
 	})
 

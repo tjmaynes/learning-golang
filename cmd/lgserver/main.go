@@ -2,20 +2,20 @@ package main
 
 import (
 	"flag"
-	"os"
 
-	app "github.com/tjmaynes/learning-golang/app"
+	api "github.com/tjmaynes/learning-golang/pkg/api"
 )
 
 func main() {
 	var (
-		dbSource   = flag.String("DB_SOURCE", os.Getenv("DB_SOURCE"), "Database url connection string.")
-		dbType     = flag.String("DB_TYPE", os.Getenv("DB_TYPE"), "Database Type, such as postgres, mysql, etc.")
-		serverPort = flag.String("SERVER_PORT", os.Getenv("SERVER_PORT"), "Port to run server on.")
+		dbSource   = flag.String("db-source", "mysql-user:password@/learning-golang-db", "Database url connection string.")
+		dbType     = flag.String("db-type", "mysql", "Database Type, such as postgres, mysql, etc.")
+		serverPort = flag.String("server-port", "3000", "Port to run server from.")
 	)
 
 	flag.Parse()
 
-	a := app.NewApp(*dbSource, *dbType)
-	a.Run(*serverPort)
+	api.
+		NewAPI(*dbSource, *dbType).
+		Run(*serverPort)
 }

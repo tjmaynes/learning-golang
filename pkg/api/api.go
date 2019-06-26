@@ -1,4 +1,4 @@
-package app
+package api
 
 import (
 	"context"
@@ -13,35 +13,38 @@ import (
 
 	driver "github.com/tjmaynes/learning-golang/driver"
 	handler "github.com/tjmaynes/learning-golang/handler"
+	"github.com/tjmaynes/learning-golang/pkg/cart"
 )
 
-// App ..
-type App struct {
-	DbConn sql.DB
-	Router http.Handler
+// API ..
+type API struct {
+	DbConn  *sql.DB
+	Handler http.Handler
 }
 
-// NewApp ..
-func NewApp(dbSource string, dbType string) *App {
+// NewAPI ..
+func NewAPI(dbSource string, dbType string) *API {
 	dbConn, err := driver.ConnectDB(dbSource, dbType)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(-1)
 	}
 
-	h := handler.Initialize(dbConn)
+	cartRepository := cart.NewRepository(dbConn)
+	cartService := cart.NewService(cartRepository)
+	h := handler.Initialize(cartService)
 
-	return &App{
-		DbConn: *dbConn,
-		Router: h,
+	return &API{
+		DbConn:  dbConn,
+		Handler: h,
 	}
 }
 
 // Run ..
-func (a *App) Run(serverPort string) {
+func (a *API) Run(serverPort string) {
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%s", serverPort),
-		Handler:        a.Router,
+		Handler:        a.Handler,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -50,7 +53,7 @@ func (a *App) Run(serverPort string) {
 	log.Println(fmt.Sprintf("Running server on port %s...", serverPort))
 
 	idleConnsClosed := make(chan struct{})
-	go setupGracefulShutdown(server, &a.DbConn, idleConnsClosed)
+	go setupGracefulShutdown(server, a.DbConn, idleConnsClosed)
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Printf("Server closed: %v", err)

@@ -13,21 +13,22 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: post; Type: TABLE; Schema: public; Owner: -
+-- Name: cart; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.post (
+CREATE TABLE public.cart (
     id integer NOT NULL,
-    title character varying(100) NOT NULL,
-    content text
+    name character varying(100) NOT NULL,
+    price numeric(5,2) NOT NULL,
+    manufacturer character varying(100) NOT NULL
 );
 
 
 --
--- Name: post_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cart_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.post_id_seq
+CREATE SEQUENCE public.cart_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -36,10 +37,10 @@ CREATE SEQUENCE public.post_id_seq
 
 
 --
--- Name: post_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cart_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.post_id_seq OWNED BY public.post.id;
+ALTER SEQUENCE public.cart_id_seq OWNED BY public.cart.id;
 
 
 --
@@ -52,18 +53,18 @@ CREATE TABLE public.schema_migrations (
 
 
 --
--- Name: post id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cart id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.post ALTER COLUMN id SET DEFAULT nextval('public.post_id_seq'::regclass);
+ALTER TABLE ONLY public.cart ALTER COLUMN id SET DEFAULT nextval('public.cart_id_seq'::regclass);
 
 
 --
--- Name: post post_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cart cart_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.post
-    ADD CONSTRAINT post_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.cart
+    ADD CONSTRAINT cart_pkey PRIMARY KEY (id);
 
 
 --
@@ -84,4 +85,5 @@ ALTER TABLE ONLY public.schema_migrations
 --
 
 INSERT INTO public.schema_migrations (version) VALUES
-    ('20190508190626');
+    ('20190508190626'),
+    ('20190626153002');

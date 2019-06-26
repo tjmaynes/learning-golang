@@ -2,20 +2,55 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
 	"io/ioutil"
+	"os"
 
 	driver "github.com/tjmaynes/learning-golang/driver"
-	"github.com/tjmaynes/learning-golang/post"
+	cart "github.com/tjmaynes/learning-golang/pkg/cart"
 )
 
+// SeedData ..
+func SeedData(jsonSource string, dbConn *sql.DB) []int64 {
+	cartRepository := cart.NewRepository(dbConn)
+	ctx := context.Background()
+
+	jsonFile, err := os.Open(jsonSource)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+	defer jsonFile.Close()
+
+	jsonBytes, _ := ioutil.ReadAll(jsonFile)
+
+	var items []cart.Item
+	err = json.Unmarshal([]byte(jsonBytes), &items)
+	if err != nil {
+		panic(err)
+	}
+
+	var ids []int64
+	for _, rawItem := range items {
+		item, err := cartRepository.AddItem(ctx, &rawItem)
+		if err != nil {
+			panic(err)
+		}
+		ids = append(ids, item.ID)
+	}
+
+	return ids
+}
+
 func main() {
-	var dbSource = flag.String("DB_SOURCE", os.Getenv("DB_SOURCE"), "Database url connection string.")
-	var dbType = flag.String("DB_TYPE", os.Getenv("DB_TYPE"), "Database Type, such as postgres, mysql, etc.")
-	var jsonSource = flag.String("JSON_SOURCE", os.Getenv("JSON_SOURCE"), "JSON Source, such as ./cmd/data.json.")
+	var (
+		dbSource   = flag.String("db-source", "mysql-user:password@/learning-golang-db", "Database url connection string.")
+		dbType     = flag.String("db-type", "mysql", "Database Type, such as postgres, mysql, etc.")
+		jsonSource = flag.String("json-source", "./db/seed.json.", "JSON Source, such as ./db/seed.json.")
+	)
 
 	flag.Parse()
 
@@ -25,42 +60,6 @@ func main() {
 		os.Exit(-1)
 	}
 
-	postRepository := post.NewPostRepository(dbConn)
-	ctx := context.Background()
-
-	jsonFile, err := os.Open(*jsonSource)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-	defer jsonFile.Close()
-
-	jsonBytes, _ := ioutil.ReadAll(jsonFile)
-
-	var posts []post.Post
-	err = json.Unmarshal([]byte(jsonBytes), &posts)
-	if err != nil {
-		panic(err)
-	}
-
-	var ids []int64
-	for _, post := range posts {
-		post, err := postRepository.AddPost(ctx, &post)
-		if err != nil {
-			panic(err)
-		}
-		ids = append(ids, post.ID)
-	}
-
-	var newPosts []*post.Post
-	for _, id := range ids {
-		newPost, err := postRepository.GetByPostID(ctx, id)
-		if err != nil {
-			panic(err)
-		}
-		newPosts = append(newPosts, newPost)
-	}
-
-	json, _ := json.MarshalIndent(&newPosts, "", "   ")
-	fmt.Printf("ADDED:\n%s\n", json)
+	ids := SeedData(*jsonSource, dbConn)
+	fmt.Printf("ADDED %d entries.", len(ids))
 }
