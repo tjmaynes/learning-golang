@@ -97,7 +97,7 @@ func Test_Cart_Repository_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
 
-	result, err := sut.GetByItemID(ctx, item1.ID)
+	result, err := sut.GetItemByID(ctx, item1.ID)
 	if err != nil {
 		t.Fatalf("Error '%s' was not expected when fetching cart item", err)
 	}
@@ -125,7 +125,7 @@ func Test_Cart_Repository_GetItemByID_WhenErrorOccurs_ShouldReturnError(t *testi
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
 
-	_, err = sut.GetByItemID(ctx, item1ID)
+	_, err = sut.GetItemByID(ctx, item1ID)
 
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating a failed fetching cart item", error, err)

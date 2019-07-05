@@ -10,7 +10,7 @@ import (
 
 var (
 	lockRepositoryMockAddItem     sync.RWMutex
-	lockRepositoryMockGetByItemID sync.RWMutex
+	lockRepositoryMockGetItemByID sync.RWMutex
 	lockRepositoryMockGetItems    sync.RWMutex
 	lockRepositoryMockRemoveItem  sync.RWMutex
 	lockRepositoryMockUpdateItem  sync.RWMutex
@@ -29,8 +29,8 @@ var _ Repository = &RepositoryMock{}
 //             AddItemFunc: func(ctx context.Context, item *Item) (Item, error) {
 // 	               panic("mock out the AddItem method")
 //             },
-//             GetByItemIDFunc: func(ctx context.Context, id int64) (Item, error) {
-// 	               panic("mock out the GetByItemID method")
+//             GetItemByIDFunc: func(ctx context.Context, id int64) (Item, error) {
+// 	               panic("mock out the GetItemByID method")
 //             },
 //             GetItemsFunc: func(ctx context.Context, limit int64) ([]Item, error) {
 // 	               panic("mock out the GetItems method")
@@ -51,8 +51,8 @@ type RepositoryMock struct {
 	// AddItemFunc mocks the AddItem method.
 	AddItemFunc func(ctx context.Context, item *Item) (Item, error)
 
-	// GetByItemIDFunc mocks the GetByItemID method.
-	GetByItemIDFunc func(ctx context.Context, id int64) (Item, error)
+	// GetItemByIDFunc mocks the GetItemByID method.
+	GetItemByIDFunc func(ctx context.Context, id int64) (Item, error)
 
 	// GetItemsFunc mocks the GetItems method.
 	GetItemsFunc func(ctx context.Context, limit int64) ([]Item, error)
@@ -72,8 +72,8 @@ type RepositoryMock struct {
 			// Item is the item argument value.
 			Item *Item
 		}
-		// GetByItemID holds details about calls to the GetByItemID method.
-		GetByItemID []struct {
+		// GetItemByID holds details about calls to the GetItemByID method.
+		GetItemByID []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// ID is the id argument value.
@@ -138,10 +138,10 @@ func (mock *RepositoryMock) AddItemCalls() []struct {
 	return calls
 }
 
-// GetByItemID calls GetByItemIDFunc.
-func (mock *RepositoryMock) GetByItemID(ctx context.Context, id int64) (Item, error) {
-	if mock.GetByItemIDFunc == nil {
-		panic("RepositoryMock.GetByItemIDFunc: method is nil but Repository.GetByItemID was just called")
+// GetItemByID calls GetItemByIDFunc.
+func (mock *RepositoryMock) GetItemByID(ctx context.Context, id int64) (Item, error) {
+	if mock.GetItemByIDFunc == nil {
+		panic("RepositoryMock.GetItemByIDFunc: method is nil but Repository.GetItemByID was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
@@ -150,16 +150,16 @@ func (mock *RepositoryMock) GetByItemID(ctx context.Context, id int64) (Item, er
 		Ctx: ctx,
 		ID:  id,
 	}
-	lockRepositoryMockGetByItemID.Lock()
-	mock.calls.GetByItemID = append(mock.calls.GetByItemID, callInfo)
-	lockRepositoryMockGetByItemID.Unlock()
-	return mock.GetByItemIDFunc(ctx, id)
+	lockRepositoryMockGetItemByID.Lock()
+	mock.calls.GetItemByID = append(mock.calls.GetItemByID, callInfo)
+	lockRepositoryMockGetItemByID.Unlock()
+	return mock.GetItemByIDFunc(ctx, id)
 }
 
-// GetByItemIDCalls gets all the calls that were made to GetByItemID.
+// GetItemByIDCalls gets all the calls that were made to GetItemByID.
 // Check the length with:
-//     len(mockedRepository.GetByItemIDCalls())
-func (mock *RepositoryMock) GetByItemIDCalls() []struct {
+//     len(mockedRepository.GetItemByIDCalls())
+func (mock *RepositoryMock) GetItemByIDCalls() []struct {
 	Ctx context.Context
 	ID  int64
 } {
@@ -167,9 +167,9 @@ func (mock *RepositoryMock) GetByItemIDCalls() []struct {
 		Ctx context.Context
 		ID  int64
 	}
-	lockRepositoryMockGetByItemID.RLock()
-	calls = mock.calls.GetByItemID
-	lockRepositoryMockGetByItemID.RUnlock()
+	lockRepositoryMockGetItemByID.RLock()
+	calls = mock.calls.GetItemByID
+	lockRepositoryMockGetItemByID.RUnlock()
 	return calls
 }
 

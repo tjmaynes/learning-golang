@@ -8,7 +8,7 @@ import (
 // Repository ..
 type Repository interface {
 	GetItems(ctx context.Context, limit int64) ([]Item, error)
-	GetByItemID(ctx context.Context, id int64) (Item, error)
+	GetItemByID(ctx context.Context, id int64) (Item, error)
 	AddItem(ctx context.Context, item *Item) (Item, error)
 	UpdateItem(ctx context.Context, item *Item) (Item, error)
 	RemoveItem(ctx context.Context, id int64) (int64, error)
@@ -50,8 +50,8 @@ func (r *repository) GetItems(ctx context.Context, limit int64) ([]Item, error) 
 	return r.FetchQuery(ctx, "SELECT id, name, price, manufacturer FROM cart LIMIT ?", limit)
 }
 
-// GetByItemID ..
-func (r *repository) GetByItemID(ctx context.Context, id int64) (Item, error) {
+// GetItemByID ..
+func (r *repository) GetItemByID(ctx context.Context, id int64) (Item, error) {
 	item := Item{}
 
 	rows, err := r.FetchQuery(ctx, "SELECT id, name, price, manufacturer FROM cart WHERE id = ?", id)

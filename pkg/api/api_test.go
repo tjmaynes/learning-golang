@@ -9,9 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/icrowley/fake"
 	driver "github.com/tjmaynes/learning-golang/driver"
 	cart "github.com/tjmaynes/learning-golang/pkg/cart"
 )
@@ -44,7 +47,35 @@ func Test_PingEndpoint_ReturnsPong(t *testing.T) {
 	}
 }
 
-func Test_CartEndpoint_GetAllItems(t *testing.T) {
+func Test_CartEndpoint_WhenUnsupportedMethodIsGiven_Returns405(t *testing.T) {
+	flag.Parse()
+
+	var tests = []struct {
+		httpMethod string
+		endpoint   string
+	}{
+		{"PUT", "/cart"},
+		{"PUT", "/cart/123"},
+	}
+
+	for _, tt := range tests {
+		a := NewAPI(*dbSource, *dbType)
+
+		request, err := http.NewRequest(tt.httpMethod, tt.endpoint, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		recorder := httptest.NewRecorder()
+		a.Handler.ServeHTTP(recorder, request)
+
+		if http.StatusMethodNotAllowed != recorder.Code {
+			t.Errorf("Expected response code %d. Got %d\n", http.StatusOK, recorder.Code)
+		}
+	}
+}
+
+func Test_CartEndpoint_GetAllItems_WhenItemsExist_ShouldReturnAllItems(t *testing.T) {
 	flag.Parse()
 
 	a := NewAPI(*dbSource, *dbType)
@@ -53,10 +84,13 @@ func Test_CartEndpoint_GetAllItems(t *testing.T) {
 	cartRepository := cart.NewRepository(getDbConn())
 	items := setupDatabase(ctx, cartRepository)
 
-	request, err := http.NewRequest("GET", "/cart", nil)
+	limit := 5
+	requestURL := fmt.Sprintf("/cart?limit=%d", limit)
+	request, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	request.Header.Set("Content-Type", "application/json")
 
 	recorder := httptest.NewRecorder()
 	a.Handler.ServeHTTP(recorder, request)
@@ -65,12 +99,95 @@ func Test_CartEndpoint_GetAllItems(t *testing.T) {
 		t.Errorf("Expected response code %d. Got %d\n", http.StatusOK, recorder.Code)
 	}
 
-	expected := createResponseBody(items[:10])
+	expected := createResponseBody(items[:limit])
 
 	if body := recorder.Body.String(); body != expected {
 		t.Errorf("Expected an array of cart items. Got %s", body)
 	}
 
+	teardownDatabase(ctx, cartRepository, items)
+}
+
+func Test_CartEndpoint_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbSource, *dbType)
+
+	ctx := context.Background()
+	cartRepository := cart.NewRepository(getDbConn())
+	items := setupDatabase(ctx, cartRepository)
+
+	item1 := items[0]
+	requestURL := fmt.Sprintf("/cart/%d", item1.ID)
+
+	request, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
+	if http.StatusOK != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusOK, recorder.Code)
+	}
+
+	expected := createResponseBody(item1)
+
+	if body := recorder.Body.String(); body != expected {
+		t.Errorf("Expected an array of cart items. Got %s", body)
+	}
+
+	teardownDatabase(ctx, cartRepository, items)
+}
+
+func Test_CartEndpoint_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbSource, *dbType)
+
+	ctx := context.Background()
+	cartRepository := cart.NewRepository(getDbConn())
+
+	itemName := fake.ProductName()
+	itemPrice := cart.Decimal(99)
+	itemManufacturer := fake.Brand()
+	newItem := cart.Item{Name: itemName, Price: itemPrice, Manufacturer: itemManufacturer}
+
+	form := url.Values{}
+	form.Add("name", newItem.Name)
+	form.Add("price", fmt.Sprintf("%d", newItem.Price))
+	form.Add("manufacturer", newItem.Manufacturer)
+
+	request, err := http.NewRequest("POST", "/cart", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
+	if http.StatusCreated != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusCreated, recorder.Code)
+	}
+
+	var result struct {
+		Data cart.Item `json:"data"`
+	}
+	err = json.Unmarshal([]byte(recorder.Body.String()), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newItem.ID = result.Data.ID
+
+	if result.Data != newItem {
+		t.Errorf("Expected a cart item %+v. Got %+v", newItem, result.Data)
+	}
+
+	items := []cart.Item{newItem}
 	teardownDatabase(ctx, cartRepository, items)
 }
 

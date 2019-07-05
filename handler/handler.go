@@ -13,8 +13,8 @@ func addCartRouter(cartHandler *handlers.CartHandler) http.Handler {
 	router := chi.NewRouter()
 
 	router.Get("/", cartHandler.GetCartItems)
-	// router.Get("/{id:[0-9]+}", postHandler.GetPostByID)
-	// router.Post("/", postHandler.AddPost)
+	router.Get("/{id:[0-9]+}", cartHandler.GetCartItemByID)
+	router.Post("/", cartHandler.AddCartItem)
 	// router.Put("/{id:[0-9]+}", postHandler.UpdatePost)
 	// router.Delete("/{id:[0-9]+}", postHandler.DeletePost)
 

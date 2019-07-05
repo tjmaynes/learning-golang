@@ -2,6 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
+
 	// "strconv"
 
 	jsonHandler "github.com/tjmaynes/learning-golang/handler/json"
@@ -25,7 +28,12 @@ func (c *CartHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := c.Service.GetAllItems(r.Context(), 10)
+	limit, err := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 64)
+	if err != nil {
+		limit = 10
+	}
+
+	data, err := c.Service.GetAllItems(r.Context(), limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -34,51 +42,58 @@ func (c *CartHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
 	jsonHandler.CreateResponse(w, http.StatusOK, map[string][]cart.Item{"data": data})
 }
 
-// // AddCartItem ..
-// func (c *CartHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method != "POST" {
-// 		http.Error(w, http.StatusText(405), 405)
-// 		return
-// 	}
+// AddCartItem ..
+func (c *CartHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
 
-// 	post := post.Post{}
-// 	json.NewDecoder(r.Body).Decode(&post)
-// 	newCartItem, err := c.Repo.AddCartItem(r.Context(), &post)
-// 	if err != nil {
-// 		http.Error(w, http.StatusText(500), 500)
-// 		return
-// 	}
-// 	json, _ := json.Marshal(newCartItem)
-// 	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
-// }
+	r.ParseForm()
 
-// // GetCartItemByID ..
-// func (c *CartHandler) GetCartItemByID(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method != "GET" {
-// 		http.Error(w, http.StatusText(405), 405)
-// 		return
-// 	}
+	itemName := r.Form.Get("name")
+	itemManufacturer := r.Form.Get("manufacturer")
+	itemPrice, err := strconv.ParseInt(r.Form.Get("price"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid price value.", 400)
+	}
 
-// 	ids, ok := r.URL.Query()["id"]
-// 	if !ok || len(ids) < 1 {
-// 		http.Error(w, http.StatusText(400), 400)
-// 		return
-// 	}
+	data, err := c.Service.AddCartItem(r.Context(), itemName, cart.Decimal(itemPrice), itemManufacturer)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 
-// 	newID, err := strconv.ParseInt(ids[0], 10, 64)
-// 	if err != nil {
-// 		http.Error(w, http.StatusText(400), 400)
-// 		return
-// 	}
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]cart.Item{"data": data})
+}
 
-// 	post, err := c.Repo.GetCartItemByID(r.Context(), newID)
-// 	if err != nil {
-// 		http.Error(w, http.StatusText(500), 500)
-// 		return
-// 	}
-// 	json, _ := json.Marshal(post)
-// 	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
-// }
+// GetCartItemByID ..
+func (c *CartHandler) GetCartItemByID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
+
+	params := strings.Split(r.URL.Path, "/")
+	if len(params) < 2 {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	id, err := strconv.ParseInt(params[2], 10, 64)
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	data, err := c.Service.GetItemByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsonHandler.CreateResponse(w, http.StatusOK, map[string]cart.Item{"data": data})
+}
 
 // // UpdateCartItem ..
 // func (c *CartHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request) {
