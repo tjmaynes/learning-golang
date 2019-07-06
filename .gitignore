@@ -19,3 +19,6 @@ vendor/
 
 # Build
 dist/
+
+# DB
+db/*.db

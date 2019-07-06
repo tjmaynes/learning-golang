@@ -107,6 +107,30 @@ func Test_Cart_Repository_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing
 	}
 }
 
+func Test_Cart_Repository_GetItemByID_WhenItemDoesNotExist_ShouldReturnError(t *testing.T) {
+	dbConn, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer dbConn.Close()
+
+	item1ID := int64(1)
+	error := createError()
+
+	mock.ExpectQuery("SELECT id, name, price, manufacturer FROM cart WHERE id = \\?").
+		WithArgs(item1ID).
+		WillReturnError(error).
+		RowsWillBeClosed()
+
+	sut := NewRepository(dbConn)
+	ctx := context.Background()
+
+	_, err = sut.GetItemByID(ctx, item1ID)
+	if error != err {
+		t.Fatalf("Expected failure '%s', but received '%s' when simulating a failed fetching cart item", error, err)
+	}
+}
+
 func Test_Cart_Repository_GetItemByID_WhenErrorOccurs_ShouldReturnError(t *testing.T) {
 	dbConn, mock, err := sqlmock.New()
 	if err != nil {

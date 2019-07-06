@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -20,15 +21,15 @@ import (
 )
 
 var (
-	dbSource   = flag.String("DB_SOURCE", os.Getenv("DB_SOURCE"), "Database url connection string.")
-	dbType     = flag.String("DB_TYPE", os.Getenv("DB_TYPE"), "Database Type, such as postgres, mysql, etc.")
-	jsonSource = flag.String("JSON_SOURCE", os.Getenv("JSON_SOURCE"), "JSON Source, such as ./cmd/data.json.")
+	dbType         = flag.String("DB_TYPE", os.Getenv("DB_TYPE"), "Database Type, such as postgres, mysql, etc.")
+	dbSource       = flag.String("DB_SOURCE", os.Getenv("DB_SOURCE"), "Database source such as ./db/my.db.")
+	seedDataSource = flag.String("SEED_DATA_SOURCE", os.Getenv("SEED_DATA_SOURCE"), "Seed data source, such as ./cmd/data.json.")
 )
 
 func Test_PingEndpoint_ReturnsPong(t *testing.T) {
 	flag.Parse()
 
-	a := NewAPI(*dbSource, *dbType)
+	a := NewAPI(*dbType, *dbSource)
 
 	request, err := http.NewRequest("GET", "/ping", nil)
 	if err != nil {
@@ -55,11 +56,11 @@ func Test_CartEndpoint_WhenUnsupportedMethodIsGiven_Returns405(t *testing.T) {
 		endpoint   string
 	}{
 		{"PUT", "/cart"},
-		{"PUT", "/cart/123"},
+		{"POST", "/cart/123"},
 	}
 
 	for _, tt := range tests {
-		a := NewAPI(*dbSource, *dbType)
+		a := NewAPI(*dbType, *dbSource)
 
 		request, err := http.NewRequest(tt.httpMethod, tt.endpoint, nil)
 		if err != nil {
@@ -78,7 +79,7 @@ func Test_CartEndpoint_WhenUnsupportedMethodIsGiven_Returns405(t *testing.T) {
 func Test_CartEndpoint_GetAllItems_WhenItemsExist_ShouldReturnAllItems(t *testing.T) {
 	flag.Parse()
 
-	a := NewAPI(*dbSource, *dbType)
+	a := NewAPI(*dbType, *dbSource)
 
 	ctx := context.Background()
 	cartRepository := cart.NewRepository(getDbConn())
@@ -111,7 +112,7 @@ func Test_CartEndpoint_GetAllItems_WhenItemsExist_ShouldReturnAllItems(t *testin
 func Test_CartEndpoint_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing.T) {
 	flag.Parse()
 
-	a := NewAPI(*dbSource, *dbType)
+	a := NewAPI(*dbType, *dbSource)
 
 	ctx := context.Background()
 	cartRepository := cart.NewRepository(getDbConn())
@@ -142,10 +143,29 @@ func Test_CartEndpoint_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing.T)
 	teardownDatabase(ctx, cartRepository, items)
 }
 
+func Test_CartEndpoint_GetItemByID_WhenItemDoesNotExist_ShouldReturn404(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbType, *dbSource)
+
+	request, err := http.NewRequest("GET", "/cart/-1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
+	if http.StatusNotFound != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusNotFound, recorder.Code)
+	}
+}
+
 func Test_CartEndpoint_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T) {
 	flag.Parse()
 
-	a := NewAPI(*dbSource, *dbType)
+	a := NewAPI(*dbType, *dbSource)
 
 	ctx := context.Background()
 	cartRepository := cart.NewRepository(getDbConn())
@@ -173,6 +193,62 @@ func Test_CartEndpoint_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T)
 		t.Errorf("Expected response code %d. Got %d\n", http.StatusCreated, recorder.Code)
 	}
 
+	items := []cart.Item{newItem}
+	teardownDatabase(ctx, cartRepository, items)
+}
+
+func Test_CartEndpoint_AddItem_WhenGivenInvalidItem_ShouldReturnBadRequest(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbType, *dbSource)
+
+	form := url.Values{}
+	form.Add("name", "")
+	form.Add("price", "")
+	form.Add("manufacturer", "")
+
+	request, err := http.NewRequest("POST", "/cart", strings.NewReader(form.Encode()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
+	if http.StatusBadRequest != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusBadGateway, recorder.Code)
+	}
+}
+
+func Test_CartEndpoint_UpdateItem_WhenGivenValidItem_ShouldReturnUpdatedItem(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbType, *dbSource)
+
+	ctx := context.Background()
+	cartRepository := cart.NewRepository(getDbConn())
+	items := setupDatabase(ctx, cartRepository)
+
+	newItem := items[0]
+
+	jsonRequest, _ := json.Marshal(map[string]string{
+		"name":         newItem.Name,
+		"price":        fmt.Sprintf("%d", newItem.Price),
+		"manufacturer": newItem.Manufacturer,
+	})
+
+	requestURL := fmt.Sprintf("/cart/%d", newItem.ID)
+
+	request, err := http.NewRequest("PUT", requestURL, bytes.NewReader(jsonRequest))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
 	var result struct {
 		Data cart.Item `json:"data"`
 	}
@@ -181,13 +257,67 @@ func Test_CartEndpoint_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T)
 		t.Fatal(err)
 	}
 
-	newItem.ID = result.Data.ID
-
 	if result.Data != newItem {
 		t.Errorf("Expected a cart item %+v. Got %+v", newItem, result.Data)
 	}
 
-	items := []cart.Item{newItem}
+	if http.StatusOK != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusOK, recorder.Code)
+	}
+
+	teardownDatabase(ctx, cartRepository, items)
+}
+
+func Test_CartEndpoint_UpdateItem_WhenGivenInvalidItem_ShouldReturnBadRequest(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbType, *dbSource)
+
+	jsonRequest, _ := json.Marshal(map[string]string{
+		"name":         "",
+		"price":        "",
+		"manufacturer": "",
+	})
+
+	request, err := http.NewRequest("PUT", "/cart/0", bytes.NewReader(jsonRequest))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
+	if http.StatusBadRequest != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusBadRequest, recorder.Code)
+	}
+}
+
+func Test_CartEndpoint_RemoveItem_WhenItemExists_ShouldReturnOkResponse(t *testing.T) {
+	flag.Parse()
+
+	a := NewAPI(*dbType, *dbSource)
+
+	ctx := context.Background()
+	cartRepository := cart.NewRepository(getDbConn())
+	items := setupDatabase(ctx, cartRepository)
+
+	newItem := items[0]
+
+	requestURL := fmt.Sprintf("/cart/%d", newItem.ID)
+
+	request, err := http.NewRequest("DELETE", requestURL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+	a.Handler.ServeHTTP(recorder, request)
+
+	if http.StatusOK != recorder.Code {
+		t.Errorf("Expected response code %d. Got %d\n", http.StatusOK, recorder.Code)
+	}
+
 	teardownDatabase(ctx, cartRepository, items)
 }
 
@@ -200,7 +330,7 @@ func createResponseBody(items interface{}) string {
 }
 
 func getDbConn() *sql.DB {
-	dbConn, err := driver.ConnectDB(*dbSource, *dbType)
+	dbConn, err := driver.ConnectDB(*dbType, *dbSource)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
@@ -212,7 +342,7 @@ func getDbConn() *sql.DB {
 func setupDatabase(ctx context.Context, cartRepository cart.Repository) []cart.Item {
 	flag.Parse()
 
-	jsonFile, err := os.Open(*jsonSource)
+	jsonFile, err := os.Open(*seedDataSource)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(-1)

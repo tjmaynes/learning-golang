@@ -47,19 +47,35 @@ func (r *repository) FetchQuery(ctx context.Context, query string, args ...inter
 
 // GetItems ..
 func (r *repository) GetItems(ctx context.Context, limit int64) ([]Item, error) {
-	return r.FetchQuery(ctx, "SELECT id, name, price, manufacturer FROM cart LIMIT ?", limit)
+	rows, err := r.DBConn.QueryContext(ctx, "SELECT id, name, price, manufacturer FROM cart LIMIT ?", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	payload := make([]Item, 0)
+	for rows.Next() {
+		data := new(Item)
+		err := rows.Scan(&data.ID, &data.Name, &data.Price, &data.Manufacturer)
+		if err != nil {
+			return nil, err
+		}
+		payload = append(payload, *data)
+	}
+
+	return payload, nil
 }
 
 // GetItemByID ..
 func (r *repository) GetItemByID(ctx context.Context, id int64) (Item, error) {
-	item := Item{}
-
-	rows, err := r.FetchQuery(ctx, "SELECT id, name, price, manufacturer FROM cart WHERE id = ?", id)
-	if err != nil {
-		return item, err
+	var item Item
+	row := r.DBConn.QueryRowContext(ctx, "SELECT id, name, price, manufacturer FROM cart WHERE id = ?", id)
+	err := row.Scan(&item.ID, &item.Name, &item.Price, &item.Manufacturer)
+	if err != nil && err != sql.ErrNoRows {
+		return Item{}, err
 	}
 
-	return rows[0], nil
+	return item, nil
 }
 
 // AddItem ..

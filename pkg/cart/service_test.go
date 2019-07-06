@@ -30,15 +30,15 @@ func Test_Cart_Service_GetAllItems_WhenItemsExist_ShouldReturnAllItems(t *testin
 	sut := NewService(mockRepository)
 
 	results, err := sut.GetAllItems(ctx, limit)
+	if err != nil {
+		t.Fatalf("Should not have failed!")
+	}
+
 	if len(results) != len(items) {
 		t.Errorf("Expected an array of cart items of size %d. Got %d", len(items), len(results))
 	}
 
 	callsToSend := len(mockRepository.GetItemsCalls())
-	if err != nil {
-		t.Fatalf("Should not have failed!")
-	}
-
 	if callsToSend != 1 {
 		t.Errorf("Send was called %d times", callsToSend)
 	}
@@ -64,15 +64,15 @@ func Test_Cart_Service_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing.T)
 	sut := NewService(mockRepository)
 
 	result, err := sut.GetItemByID(ctx, id)
+	if err != nil {
+		t.Fatalf("Should not have failed!")
+	}
+
 	if result != item {
 		t.Errorf("Expected cart items %+v. Got %+v", item, result)
 	}
 
 	callsToSend := len(mockRepository.GetItemByIDCalls())
-	if err != nil {
-		t.Fatalf("Should not have failed!")
-	}
-
 	if callsToSend != 1 {
 		t.Errorf("Send was called %d times", callsToSend)
 	}
@@ -82,16 +82,40 @@ func Test_Cart_Service_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing.T)
 	}
 }
 
+func Test_Cart_Service_GetItemByID_WhenItemDoesNotExist_ShouldReturnError(t *testing.T) {
+	testError := createError()
+
+	mockRepository := &RepositoryMock{
+		GetItemByIDFunc: func(ctx context.Context, id int64) (Item, error) {
+			return Item{}, testError
+		},
+	}
+
+	ctx := context.Background()
+	sut := NewService(mockRepository)
+
+	_, err := sut.GetItemByID(ctx, 0)
+	if err != testError {
+		t.Errorf("Expected error message %s. Got %s", testError, err)
+	}
+
+	callsToSend := len(mockRepository.GetItemByIDCalls())
+	if callsToSend != 1 {
+		t.Errorf("Send was called %d times", callsToSend)
+	}
+}
+
 func Test_Cart_Service_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T) {
-	itemID := int64(1)
-	itemName := fake.ProductName()
-	itemPrice := Decimal(99)
-	itemManufacturer := fake.Brand()
 	var itemCalled *Item
+	newItem := Item{
+		ID:           int64(1),
+		Name:         fake.ProductName(),
+		Price:        Decimal(99),
+		Manufacturer: fake.Brand(),
+	}
 
 	mockRepository := &RepositoryMock{
 		AddItemFunc: func(ctx context.Context, item *Item) (Item, error) {
-			newItem := Item{ID: itemID, Name: item.Name, Price: item.Price, Manufacturer: item.Manufacturer}
 			itemCalled = &newItem
 			return newItem, nil
 		},
@@ -100,13 +124,13 @@ func Test_Cart_Service_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T)
 	ctx := context.Background()
 	sut := NewService(mockRepository)
 
-	result, err := sut.AddCartItem(ctx, itemName, itemPrice, itemManufacturer)
-	if result != *itemCalled {
-		t.Errorf("Expected cart item: %+v. Got %+v", itemCalled, result)
-	}
-
+	result, err := sut.AddCartItem(ctx, newItem.Name, newItem.Price, newItem.Manufacturer)
 	if err != nil {
 		t.Fatalf("Should not have failed!")
+	}
+
+	if result != *itemCalled {
+		t.Errorf("Expected cart item: %+v. Got %+v", itemCalled, result)
 	}
 
 	callsToSend := len(mockRepository.AddItemCalls())
@@ -116,11 +140,11 @@ func Test_Cart_Service_AddItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T)
 }
 
 func Test_Cart_Service_AddItem_WhenGivenInvalidItem_ShouldReturnError(t *testing.T) {
-	item := Item{ID: 1, Name: fake.ProductName(), Price: 23, Manufacturer: fake.Brand()}
+	newItem := Item{ID: 1, Name: fake.ProductName(), Price: 23, Manufacturer: fake.Brand()}
 
 	mockRepository := &RepositoryMock{
 		AddItemFunc: func(ctx context.Context, item *Item) (Item, error) {
-			return *item, nil
+			return Item{}, nil
 		},
 	}
 
@@ -129,7 +153,7 @@ func Test_Cart_Service_AddItem_WhenGivenInvalidItem_ShouldReturnError(t *testing
 
 	expectedErrorMessage := "price: must be no less than 99."
 
-	_, err := sut.AddCartItem(ctx, item.Name, item.Price, item.Manufacturer)
+	_, err := sut.AddCartItem(ctx, newItem.Name, newItem.Price, newItem.Manufacturer)
 	if err.Error() != expectedErrorMessage {
 		t.Errorf("Error unexpected error message %s was given", err)
 	}

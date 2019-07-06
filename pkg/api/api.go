@@ -23,8 +23,8 @@ type API struct {
 }
 
 // NewAPI ..
-func NewAPI(dbSource string, dbType string) *API {
-	dbConn, err := driver.ConnectDB(dbSource, dbType)
+func NewAPI(dbType, dbSource string) *API {
+	dbConn, err := driver.ConnectDB(dbType, dbSource)
 	if err != nil {
 		log.Println(err)
 		os.Exit(-1)

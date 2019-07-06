@@ -13,6 +13,7 @@ require (
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/lib/pq v1.1.1
 	github.com/matryer/moq v0.0.0-20190312154309-6cfb0558e1bd // indirect
+	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect

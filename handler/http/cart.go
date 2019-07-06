@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,7 +25,7 @@ type CartHandler struct {
 // GetCartItems ..
 func (c *CartHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
-		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -42,48 +43,16 @@ func (c *CartHandler) GetCartItems(w http.ResponseWriter, r *http.Request) {
 	jsonHandler.CreateResponse(w, http.StatusOK, map[string][]cart.Item{"data": data})
 }
 
-// AddCartItem ..
-func (c *CartHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, http.StatusText(405), 405)
-		return
-	}
-
-	r.ParseForm()
-
-	itemName := r.Form.Get("name")
-	itemManufacturer := r.Form.Get("manufacturer")
-	itemPrice, err := strconv.ParseInt(r.Form.Get("price"), 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid price value.", 400)
-	}
-
-	data, err := c.Service.AddCartItem(r.Context(), itemName, cart.Decimal(itemPrice), itemManufacturer)
-	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-
-	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]cart.Item{"data": data})
-}
-
 // GetCartItemByID ..
 func (c *CartHandler) GetCartItemByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
-		http.Error(w, http.StatusText(405), 405)
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
-	params := strings.Split(r.URL.Path, "/")
-	if len(params) < 2 {
-		http.Error(w, http.StatusText(400), 400)
-		return
-	}
-
-	id, err := strconv.ParseInt(params[2], 10, 64)
-	if err != nil {
-		http.Error(w, http.StatusText(400), 400)
-		return
+	id, errorCode := getID(r.URL.Path)
+	if errorCode >= 400 {
+		http.Error(w, http.StatusText(errorCode), errorCode)
 	}
 
 	data, err := c.Service.GetItemByID(r.Context(), id)
@@ -95,51 +64,111 @@ func (c *CartHandler) GetCartItemByID(w http.ResponseWriter, r *http.Request) {
 	jsonHandler.CreateResponse(w, http.StatusOK, map[string]cart.Item{"data": data})
 }
 
-// // UpdateCartItem ..
-// func (c *CartHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method != "PUT" {
-// 		http.Error(w, http.StatusText(405), 405)
-// 		return
-// 	}
+// AddCartItem ..
+func (c *CartHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
 
-// 	post := post.Post{}
-// 	json.NewDecoder(r.Body).Decode(&post)
+	r.ParseForm()
 
-// 	updatedPost, err := c.Repo.UpdatePost(r.Context(), &post)
-// 	if err != nil {
-// 		http.Error(w, http.StatusText(500), 500)
-// 		return
-// 	}
+	itemName := r.Form.Get("name")
+	itemManufacturer := r.Form.Get("manufacturer")
+	itemPrice, errorCode := getItemPrice(r.Form.Get("price"))
+	if errorCode >= 400 {
+		http.Error(w, http.StatusText(errorCode), errorCode)
+		return
+	}
 
-// 	json, _ := json.Marshal(updatedPost)
-// 	jsonHandler.CreateResponse(w, http.StatusCreated, map[string][]byte{"data": json})
-// }
+	_, err := c.Service.AddCartItem(r.Context(), itemName, cart.Decimal(itemPrice), itemManufacturer)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 
-// // DeleteCartItem ..
-// func (c *CartHandler) DeleteCartItem(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method != "DELETE" {
-// 		http.Error(w, http.StatusText(405), 405)
-// 		return
-// 	}
+	jsonHandler.CreateResponse(w, http.StatusCreated, http.StatusText(http.StatusCreated))
+}
 
-// 	ids, ok := r.URL.Query()["id"]
-// 	if !ok || len(ids) < 1 {
-// 		http.Error(w, http.StatusText(400), 400)
-// 		return
-// 	}
+// UpdateCartItem ..
+func (c *CartHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
 
-// 	newID, err := strconv.ParseInt(ids[0], 10, 64)
-// 	if err != nil {
-// 		http.Error(w, http.StatusText(400), 400)
-// 		return
-// 	}
+	id, errorCode := getID(r.URL.Path)
+	if errorCode >= 400 {
+		http.Error(w, http.StatusText(errorCode), errorCode)
+		return
+	}
 
-// 	_, err = c.Repo.DeleteCartItem(r.Context(), newID)
-// 	if err != nil {
-// 		http.Error(w, http.StatusText(500), 500)
-// 		return
-// 	}
+	decoder := json.NewDecoder(r.Body)
+	type itemRequest struct {
+		Name         string `json:"name"`
+		Price        string `json:"price"`
+		Manufacturer string `json:"manufacturer"`
+	}
+	var item itemRequest
+	err := decoder.Decode(&item)
+	if err != nil {
+		panic(err)
+	}
 
-// 	message := fmt.Sprintf("Deleted Post ID: %v", newID)
-// 	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]string{"message": message})
-// }
+	itemPrice, errorCode := getItemPrice(item.Price)
+	if errorCode >= 400 {
+		http.Error(w, "Price value is invalid.", errorCode)
+		return
+	}
+
+	data, err := c.Service.UpdateCartItem(r.Context(), id, item.Name, cart.Decimal(itemPrice), item.Manufacturer)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]cart.Item{"data": data})
+}
+
+// RemoveCartItem ..
+func (c *CartHandler) RemoveCartItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	id, errorCode := getID(r.URL.Path)
+	if errorCode >= 400 {
+		http.Error(w, http.StatusText(errorCode), errorCode)
+	}
+
+	_, err := c.Service.RemoveCartItem(r.Context(), id)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	jsonHandler.CreateResponse(w, http.StatusOK, http.StatusText(200))
+}
+
+func getID(urlPath string) (int64, int) {
+	params := strings.Split(urlPath, "/")
+	if len(params) < 2 {
+		return 0, http.StatusBadRequest
+	}
+
+	id, err := strconv.ParseInt(params[2], 10, 64)
+	if err != nil {
+		return 0, http.StatusBadRequest
+	}
+
+	return id, 0
+}
+
+func getItemPrice(rawPrice string) (int64, int) {
+	result, err := strconv.ParseInt(rawPrice, 10, 64)
+	if err != nil {
+		return 0, http.StatusBadRequest
+	}
+	return result, 0
+}

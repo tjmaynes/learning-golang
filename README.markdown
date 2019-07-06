@@ -2,12 +2,13 @@
 
 ![https://godoc.org/github.com/tjmaynes/learning-golang](https://github.com/golang/gddo/blob/c782c79e0a3c3282dacdaaebeff9e6fd99cb2919/gddo-server/assets/status.svg)
 
-> CRUD service with MySQL database calls. Based on this [tutorial](https://itnext.io/building-restful-web-api-service-using-golang-chi-mysql-d85f427dee54), added complexity and test-drove the codebase to further understand Golang.
+> CRUD service with a SQLite3 database. Based on this [tutorial](https://itnext.io/building-restful-web-api-service-using-golang-chi-mysql-d85f427dee54), added complexity and test-drove the codebase to further understand Golang.
 
 ## Requirements
 
 - [golang](https://golang.org/)
-- [docker](https://hub.docker.com/_/postgres)
+- [sqlite3](https://www.sqlite.org)
+- [docker](https://hub.docker.com/)
 
 ## Usage
 
@@ -43,7 +44,7 @@ make generate_seed_data
 
 To seed the database, run the following command:
 ```bash
-make seed
+make seed_db
 ```
 
 To build the server, run the following command:
