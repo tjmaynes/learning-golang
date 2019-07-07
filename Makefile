@@ -51,10 +51,11 @@ build_image:
 
 run_image:
 	docker run --rm \
-	 -p $(SERVER_PORT):$(SERVER_PORT) \
-	 -e DB_TYPE=$(DB_TYPE) \
-	 -e DB_SOURCE=$(DB_SOURCE) \
-	 -e SERVER_PORT=$(SERVER_PORT) \
+	 --env DB_TYPE=$(DB_TYPE) \
+	 --env DB_SOURCE=$(DB_SOURCE) \
+	 --env SERVER_PORT=$(SERVER_PORT) \
+	 --volume $(PWD):. \
+	 --publish $(SERVER_PORT):$(SERVER_PORT) \
 	 tjmaynes/learning-golang-server:$(TAG)
 
 clean:
