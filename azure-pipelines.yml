@@ -1,0 +1,75 @@
+variables:
+  GOBIN:  "$(GOPATH)/bin"
+  GOROOT: "/usr/local/go1.12"
+  GOPATH: "$(system.defaultWorkingDirectory)/go"
+  modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)"
+
+jobs:
+- job: RunTests
+  displayName: Run Unit/Integration Tests
+  pool:
+    vmImage: "ubuntu-16.04"
+  steps:
+    - script: |
+        mkdir -p "$(GOBIN)"
+        mkdir -p "$(GOPATH)/pkg"
+        mkdir -p "$(modulePath)"
+        echo "Moving $(system.defaultWorkingDirectory)/* To $(modulePath)"
+        mv $(system.defaultWorkingDirectory)/* $(modulePath)
+        shopt -s extglob
+        mv !(go) "$(modulePath)"
+        echo "##vso[task.prependpath]$(GOBIN)"
+        echo "##vso[task.prependpath]$(GOROOT)/bin"
+      displayName: Setup Go Workspace
+    - bash: make install_dependencies
+      displayName: Install Dependencies
+      workingDirectory: $(modulePath)
+    - bash: make run_migrations
+      displayName: Run SQL Migrations
+      workingDirectory: $(modulePath)
+    - bash: make ci_test
+      displayName: Run Tests
+      workingDirectory: $(modulePath)
+    - task: PublishTestResults@2
+      displayName: Publish Test Results
+      inputs:
+        testResultsFormat: "JUnit"
+        testResultsFiles: $(modulePath)/report.xml
+        mergeTestResults: true
+    - task: PublishCodeCoverageResults@1
+      displayName: Publish Code Coverage
+      inputs:
+        codeCoverageTool: cobertura
+        summaryFileLocation: $(modulePath)/coverage.xml
+        reportDirectory: $(modulePath)/coverage
+- job: BuildAndPublishArtifact
+  dependsOn: RunTests
+  displayName: Build and Publish Artifact
+  pool:
+    vmImage: "ubuntu-16.04"
+  steps:
+    - script: |
+        mkdir -p "$(GOBIN)"
+        mkdir -p "$(GOPATH)/pkg"
+        mkdir -p "$(modulePath)"
+        echo "Moving $(system.defaultWorkingDirectory)/* To $(modulePath)"
+        mv $(system.defaultWorkingDirectory)/* $(modulePath)
+        shopt -s extglob
+        mv !(go) "$(modulePath)"
+        echo "##vso[task.prependpath]$(GOBIN)"
+        echo "##vso[task.prependpath]$(GOROOT)/bin"
+      displayName: Setup Go Workspace
+    - script: VERSION_TAG=`git describe --tags` && echo "##vso[task.setvariable variable=VERSION_TAG]$VERSION_TAG"
+      displayName: Set the tag name as an Environment Variable
+    - bash: make install_dependencies
+      displayName: Install Dependencies
+      workingDirectory: $(modulePath)
+    - bash: make build_image
+      displayName: Build Docker Image
+      workingDirectory: $(modulePath)
+    - bash: REGISTRY_USERNAME=$(REGISTRY_USERNAME) REGISTRY_PASSWORD=$(REGISTRY_PASSWORD) TAG=$(VERSION_TAG) make push_image
+      displayName: Push Docker Image to Dockerhub
+      workingDirectory: $(modulePath)
+      env:
+        REGISTRY_USERNAME: $(REGISTRY_USERNAME)
+        REGISTRY_PASSWORD: $(REGISTRY_PASSWORD)

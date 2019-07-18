@@ -1,13 +1,14 @@
 # Learning Golang
 
+> CRUD service with a SQLite3 database. Based on this [tutorial](https://itnext.io/building-restful-web-api-service-using-golang-chi-mysql-d85f427dee54), added complexity and test-drove the codebase to further understand Golang.
+
 ![https://godoc.org/github.com/tjmaynes/learning-golang](https://github.com/golang/gddo/blob/c782c79e0a3c3282dacdaaebeff9e6fd99cb2919/gddo-server/assets/status.svg)
 
-> CRUD service with a SQLite3 database. Based on this [tutorial](https://itnext.io/building-restful-web-api-service-using-golang-chi-mysql-d85f427dee54), added complexity and test-drove the codebase to further understand Golang.
+[![Build Status](https://tjmaynes.visualstudio.com/learning-projects/_apis/build/status/tjmaynes.learning-golang?branchName=master)](https://tjmaynes.visualstudio.com/learning-projects/_build/latest?definitionId=5&branchName=master)
 
 ## Requirements
 
 - [golang](https://golang.org/)
-- [sqlite3](https://www.sqlite.org)
 - [docker](https://hub.docker.com/)
 
 ## Usage

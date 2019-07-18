@@ -10,9 +10,12 @@ SEED_DATA_SOURCE := $(PWD)/db/seed.json
 PROJECT := github.com/tjmaynes/learning-golang
 
 install_dependencies:
-	GO111MODULE=on go get github.com/amacneil/dbmate
-	GO111MODULE=on go get github.com/matryer/moq
-	GO111MODULE=on CGO_ENABLED=1 go get github.com/mattn/go-sqlite3
+	GO111MODULE=on go get -u github.com/jstemmer/go-junit-report
+	GO111MODULE=on go get -u github.com/amacneil/dbmate
+	GO111MODULE=on go get -u github.com/matryer/moq
+	GO111MODULE=on go get -u github.com/axw/gocov/gocov
+	GO111MODULE=on go get -u github.com/AlekSi/gocov-xml
+	GO111MODULE=on go get -u github.com/matm/gocov-html
 
 generate_mocks:
 	moq -out pkg/cart/repository_mock.go pkg/cart Repository
@@ -28,7 +31,13 @@ test:
 	DB_SOURCE=$(DB_SOURCE) \
 	SERVER_PORT=$(SERVER_PORT) \
 	SEED_DATA_SOURCE=$(SEED_DATA_SOURCE) \
-	GO111MODULE=on go test -race -v ./...
+	GO111MODULE=on go test -race -v -coverprofile=coverage.txt ./...
+
+ci_test:
+	make test 2>&1 | go-junit-report > report.xml
+	gocov convert coverage.txt > coverage.json    
+	gocov-xml < coverage.json > coverage.xml
+	(mkdir -p coverage || true) && gocov-html < coverage.json > coverage/index.html
 
 run_migrations:
 	DATABASE_URL=sqlite:///$(DB_SOURCE) dbmate up
@@ -48,7 +57,7 @@ run_server: build_server
 	SERVER_PORT=$(SERVER_PORT) \
 	./dist/lgserver
 
-build_image:
+build_image: guard-TAG
 	docker build -t tjmaynes/learning-golang-server:$(TAG) .
 
 run_image:
@@ -60,5 +69,15 @@ run_image:
 	 --publish $(SERVER_PORT):$(SERVER_PORT) \
 	 tjmaynes/learning-golang-server:$(TAG)
 
+push_image: guard-REGISTRY_USERNAME guard-REGISTRY_PASSWORD guard-TAG
+	docker login -u --username "$(REGISTRY_USERNAME)" --password "$(REGISTRY_PASSWORD)"
+	docker push $(REGISTRY_USERNAME)/$(IMAGE_NAME):$(TAG)
+
 clean:
-	rm -rf dist/ vendor/
+	rm -rf dist/ vendor/ coverage* report.xml
+
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set!"; \
+		exit 1; \
+	fi
