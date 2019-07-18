@@ -66,7 +66,7 @@ curl -X GET localhost:3000/ping
 
 To get all cart items, run the following command:
 ```bash
-curl -X GET localhost:3000/cart
+curl -X GET 'localhost:3000/cart?limit=20'
 ```
 
 To get a cart item by id, run the following command:
@@ -88,7 +88,7 @@ To update a cart item, run the following command:
 curl \
     -X PUT \
     -H "Content-Type: application/json" \
-    -d '{"name": "Lens Cap", "price": "1200", "manufacturer": "Canon"}' \
+    -d '{"name": "Lens Cap", "price": "888888888", "manufacturer": "Canon"}' \
     localhost:3000/cart/1
 ```
 

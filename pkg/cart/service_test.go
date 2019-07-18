@@ -2,6 +2,7 @@ package cart
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/icrowley/fake"
@@ -159,6 +160,164 @@ func Test_Cart_Service_AddItem_WhenGivenInvalidItem_ShouldReturnError(t *testing
 	}
 
 	callsToSend := len(mockRepository.AddItemCalls())
+	if callsToSend != 0 {
+		t.Errorf("Send was called %d times", callsToSend)
+	}
+}
+
+func Test_Cart_Service_UpdateCartItem_WhenGivenValidItem_ShouldReturnItem(t *testing.T) {
+	var itemCalled *Item
+	updatedItem := Item{
+		ID:           int64(1),
+		Name:         fake.ProductName(),
+		Price:        Decimal(99),
+		Manufacturer: fake.Brand(),
+	}
+
+	mockRepository := &RepositoryMock{
+		UpdateItemFunc: func(ctx context.Context, item *Item) (Item, error) {
+			itemCalled = &updatedItem
+			return updatedItem, nil
+		},
+	}
+
+	ctx := context.Background()
+	sut := NewService(mockRepository)
+
+	result, err := sut.UpdateCartItem(ctx, updatedItem.ID, updatedItem.Name, updatedItem.Price, updatedItem.Manufacturer)
+	if err != nil {
+		t.Fatalf("Should not have failed!")
+	}
+
+	if result != *itemCalled {
+		t.Errorf("Expected cart item: %+v. Got %+v", itemCalled, result)
+	}
+
+	callsToSend := len(mockRepository.UpdateItemCalls())
+	if callsToSend != 1 {
+		t.Errorf("Send was called %d times", callsToSend)
+	}
+}
+
+func Test_Cart_Service_UpdateCartItem_WhenGivenInvalidItem_ShouldReturnServiceError(t *testing.T) {
+	invalidItem := Item{
+		ID:           int64(1),
+		Name:         fake.ProductName(),
+		Price:        Decimal(25),
+		Manufacturer: fake.Brand(),
+	}
+
+	mockRepository := &RepositoryMock{
+		UpdateItemFunc: func(ctx context.Context, item *Item) (Item, error) {
+			return Item{}, nil
+		},
+	}
+
+	ctx := context.Background()
+	sut := NewService(mockRepository)
+
+	_, serviceError := sut.UpdateCartItem(ctx, invalidItem.ID, invalidItem.Name, invalidItem.Price, invalidItem.Manufacturer)
+
+	if serviceError.StatusCode() != InvalidItem {
+		t.Errorf("Error unexpected error message %s was given", serviceError.Message())
+	}
+
+	callsToSend := len(mockRepository.UpdateItemCalls())
+	if callsToSend != 0 {
+		t.Errorf("Send was called %d times", callsToSend)
+	}
+}
+
+func Test_Cart_Service_UpdateCartItem_WhenUnknownErrorOccurs_ShouldReturnServiceError(t *testing.T) {
+	invalidItem := Item{
+		ID:           int64(1),
+		Name:         fake.ProductName(),
+		Price:        Decimal(99),
+		Manufacturer: fake.Brand(),
+	}
+
+	err := errors.New("Unknown error occurred")
+
+	mockRepository := &RepositoryMock{
+		UpdateItemFunc: func(ctx context.Context, item *Item) (Item, error) {
+			return Item{}, err
+		},
+	}
+
+	ctx := context.Background()
+	sut := NewService(mockRepository)
+
+	_, serviceError := sut.UpdateCartItem(ctx, invalidItem.ID, invalidItem.Name, invalidItem.Price, invalidItem.Manufacturer)
+
+	if serviceError.StatusCode() != UnknownException {
+		t.Errorf("Error unexpected error message %s was given", serviceError.Message())
+	}
+
+	callsToSend := len(mockRepository.UpdateItemCalls())
+	if callsToSend != 1 {
+		t.Errorf("Send was called %d times", callsToSend)
+	}
+}
+
+func Test_Cart_Service_RemoveCartItem_WhenItemExists_ShouldReturnItemID(t *testing.T) {
+	var idCalled int64
+	deletedItem := Item{
+		ID:           int64(1),
+		Name:         fake.ProductName(),
+		Price:        Decimal(99),
+		Manufacturer: fake.Brand(),
+	}
+
+	mockRepository := &RepositoryMock{
+		RemoveItemFunc: func(ctx context.Context, id int64) (int64, error) {
+			idCalled = deletedItem.ID
+			return deletedItem.ID, nil
+		},
+	}
+
+	ctx := context.Background()
+	sut := NewService(mockRepository)
+
+	result, err := sut.RemoveCartItem(ctx, deletedItem.ID)
+	if err != nil {
+		t.Fatalf("Should not have failed!")
+	}
+
+	if result != idCalled {
+		t.Errorf("Expected cart item: %d. Got %d", idCalled, result)
+	}
+
+	callsToSend := len(mockRepository.RemoveItemCalls())
+	if callsToSend != 1 {
+		t.Errorf("Send was called %d times", callsToSend)
+	}
+}
+
+func Test_Cart_Service_RemoveCartItem_WhenUnknownErrorOccurs_ShouldReturnServiceError(t *testing.T) {
+	deletedItem := Item{
+		ID:           int64(1),
+		Name:         fake.ProductName(),
+		Price:        Decimal(99),
+		Manufacturer: fake.Brand(),
+	}
+
+	unknownError := errors.New("Unknown Error")
+
+	mockRepository := &RepositoryMock{
+		RemoveItemFunc: func(ctx context.Context, id int64) (int64, error) {
+			return deletedItem.ID, unknownError
+		},
+	}
+
+	ctx := context.Background()
+	sut := NewService(mockRepository)
+
+	_, serviceError := sut.RemoveCartItem(ctx, deletedItem.ID)
+	if serviceError.StatusCode() != UnknownException {
+		t.Errorf("Error unexpected error message %s was given", serviceError.Message())
+	}
+
+	callsToSend := len(mockRepository.UpdateItemCalls())
 	if callsToSend != 0 {
 		t.Errorf("Send was called %d times", callsToSend)
 	}

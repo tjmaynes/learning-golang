@@ -67,7 +67,7 @@ func (c *CartHandler) GetCartItemByID(w http.ResponseWriter, r *http.Request) {
 // AddCartItem ..
 func (c *CartHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(405), 405)
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -81,19 +81,19 @@ func (c *CartHandler) AddCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := c.Service.AddCartItem(r.Context(), itemName, cart.Decimal(itemPrice), itemManufacturer)
+	data, err := c.Service.AddCartItem(r.Context(), itemName, cart.Decimal(itemPrice), itemManufacturer)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	jsonHandler.CreateResponse(w, http.StatusCreated, http.StatusText(http.StatusCreated))
+	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]cart.Item{"data": data})
 }
 
 // UpdateCartItem ..
 func (c *CartHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "PUT" {
-		http.Error(w, http.StatusText(405), 405)
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -121,13 +121,29 @@ func (c *CartHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := c.Service.UpdateCartItem(r.Context(), id, item.Name, cart.Decimal(itemPrice), item.Manufacturer)
+	result, err := c.Service.GetItemByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 
-	jsonHandler.CreateResponse(w, http.StatusCreated, map[string]cart.Item{"data": data})
+	if id != result.ID {
+		http.Error(w, http.StatusText(http.StatusNoContent), http.StatusNoContent)
+		return
+	}
+
+	data, serviceError := c.Service.UpdateCartItem(r.Context(), id, item.Name, cart.Decimal(itemPrice), item.Manufacturer)
+	if serviceError != nil {
+		switch serviceError.StatusCode() {
+		case cart.InvalidItem:
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		default:
+			http.Error(w, http.StatusText(500), 500)
+		}
+		return
+	}
+
+	jsonHandler.CreateResponse(w, http.StatusOK, map[string]cart.Item{"data": data})
 }
 
 // RemoveCartItem ..
@@ -142,9 +158,9 @@ func (c *CartHandler) RemoveCartItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(errorCode), errorCode)
 	}
 
-	_, err := c.Service.RemoveCartItem(r.Context(), id)
-	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
+	_, serviceError := c.Service.RemoveCartItem(r.Context(), id)
+	if serviceError != nil {
+		http.Error(w, serviceError.Message(), 500)
 		return
 	}
 

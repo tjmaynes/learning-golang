@@ -20,8 +20,8 @@ type Service interface {
 		name string,
 		price Decimal,
 		manufacturer string,
-	) (Item, error)
-	RemoveCartItem(ctx context.Context, id int64) (int64, error)
+	) (Item, ServiceError)
+	RemoveCartItem(ctx context.Context, id int64) (int64, ServiceError)
 }
 
 // NewService ..
@@ -58,18 +58,28 @@ func (s *service) AddCartItem(ctx context.Context, name string, price Decimal, m
 }
 
 // UpdateCartItem ..
-func (s *service) UpdateCartItem(ctx context.Context, id int64, name string, price Decimal, manufacturer string) (Item, error) {
+func (s *service) UpdateCartItem(ctx context.Context, id int64, name string, price Decimal, manufacturer string) (Item, ServiceError) {
 	item := Item{ID: id, Name: name, Price: price, Manufacturer: manufacturer}
 
 	err := item.Validate()
 	if err != nil {
-		return Item{}, err
+		return Item{}, CreateServiceError(err.Error(), InvalidItem)
 	}
 
-	return s.Repository.UpdateItem(ctx, &item)
+	result, err := s.Repository.UpdateItem(ctx, &item)
+	if err != nil {
+		return Item{}, CreateServiceError(err.Error(), UnknownException)
+	}
+
+	return result, nil
 }
 
 // RemoveCartItem ..
-func (s *service) RemoveCartItem(ctx context.Context, id int64) (int64, error) {
-	return s.Repository.RemoveItem(ctx, id)
+func (s *service) RemoveCartItem(ctx context.Context, id int64) (int64, ServiceError) {
+	result, err := s.Repository.RemoveItem(ctx, id)
+	if err != nil {
+		return id, CreateServiceError(err.Error(), UnknownException)
+	}
+
+	return result, nil
 }

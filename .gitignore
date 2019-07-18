@@ -21,4 +21,4 @@ vendor/
 dist/
 
 # DB
-db/*.db
+db/*.db*

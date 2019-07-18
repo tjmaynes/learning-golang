@@ -80,22 +80,26 @@ func (r *repository) GetItemByID(ctx context.Context, id int64) (Item, error) {
 
 // AddItem ..
 func (r *repository) AddItem(ctx context.Context, item *Item) (Item, error) {
-	newItem := Item{}
-
-	stmt, err := r.DBConn.PrepareContext(ctx, "INSERT INTO cart (name, price, manufacturer) VALUES (?, ?, ?)")
+	tx, err := r.DBConn.BeginTx(ctx, nil)
 	if err != nil {
-		return newItem, err
+		return Item{}, err
 	}
-	defer stmt.Close()
 
-	result, err := stmt.ExecContext(ctx, item.Name, item.Price, item.Manufacturer)
+	result, err := tx.ExecContext(ctx, "INSERT INTO cart (name, price, manufacturer) VALUES (?, ?, ?)", item.Name, item.Price, item.Manufacturer)
 	if err != nil {
-		return newItem, err
+		tx.Rollback()
+		return Item{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return Item{}, err
 	}
 
 	insertedID, err := result.LastInsertId()
 	if err != nil {
-		return newItem, err
+		return Item{}, err
 	}
 
 	return Item{
@@ -108,17 +112,21 @@ func (r *repository) AddItem(ctx context.Context, item *Item) (Item, error) {
 
 // UpdateItem ..
 func (r *repository) UpdateItem(ctx context.Context, item *Item) (Item, error) {
-	updatedItem := Item{}
-
-	stmt, err := r.DBConn.PrepareContext(ctx, "UPDATE cart SET name = ?, price = ?, manufacturer = ? WHERE id = ?")
+	tx, err := r.DBConn.BeginTx(ctx, nil)
 	if err != nil {
-		return updatedItem, err
+		return Item{}, err
 	}
-	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, item.ID, item.Name, item.Price, item.Manufacturer)
+	_, err = tx.ExecContext(ctx, "UPDATE cart SET name = ?, price = ?, manufacturer = ? WHERE id = ?", item.ID, item.Name, item.Price, item.Manufacturer)
 	if err != nil {
-		return updatedItem, err
+		tx.Rollback()
+		return Item{}, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return Item{}, err
 	}
 
 	return *item, nil

@@ -48,6 +48,10 @@ func Test_Cart_Repository_GetItems_ShouldReturnItems(t *testing.T) {
 	if len(result) != limit {
 		t.Fatalf("Unexpected number of items were given, '%d'. Expected '%d'.", len(result), limit)
 	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
 }
 
 func Test_Cart_Repository_GetItems_WhenErrorOccurs_ShouldReturnError(t *testing.T) {
@@ -62,8 +66,7 @@ func Test_Cart_Repository_GetItems_WhenErrorOccurs_ShouldReturnError(t *testing.
 
 	mock.ExpectQuery("SELECT id, name, price, manufacturer FROM cart LIMIT \\?").
 		WithArgs(limit).
-		WillReturnError(error).
-		RowsWillBeClosed()
+		WillReturnError(error)
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -75,6 +78,10 @@ func Test_Cart_Repository_GetItems_WhenErrorOccurs_ShouldReturnError(t *testing.
 
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating a failed fetching cart item", error, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -105,6 +112,10 @@ func Test_Cart_Repository_GetItemByID_WhenItemExists_ShouldReturnItem(t *testing
 	if result != item1 {
 		t.Fatalf("Unexpected item was given, '%+v'. Expected '%+v'.", result, item1)
 	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
 }
 
 func Test_Cart_Repository_GetItemByID_WhenItemDoesNotExist_ShouldReturnError(t *testing.T) {
@@ -119,8 +130,7 @@ func Test_Cart_Repository_GetItemByID_WhenItemDoesNotExist_ShouldReturnError(t *
 
 	mock.ExpectQuery("SELECT id, name, price, manufacturer FROM cart WHERE id = \\?").
 		WithArgs(item1ID).
-		WillReturnError(error).
-		RowsWillBeClosed()
+		WillReturnError(error)
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -128,6 +138,10 @@ func Test_Cart_Repository_GetItemByID_WhenItemDoesNotExist_ShouldReturnError(t *
 	_, err = sut.GetItemByID(ctx, item1ID)
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating a failed fetching cart item", error, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -143,8 +157,7 @@ func Test_Cart_Repository_GetItemByID_WhenErrorOccurs_ShouldReturnError(t *testi
 
 	mock.ExpectQuery("SELECT id, name, price, manufacturer FROM cart WHERE id = \\?").
 		WithArgs(item1ID).
-		WillReturnError(error).
-		RowsWillBeClosed()
+		WillReturnError(error)
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -153,6 +166,10 @@ func Test_Cart_Repository_GetItemByID_WhenErrorOccurs_ShouldReturnError(t *testi
 
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating a failed fetching cart item", error, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -165,11 +182,11 @@ func Test_Cart_Repository_AddItem_ShouldReturnInsertedItem(t *testing.T) {
 
 	item := Item{ID: 0, Name: fake.ProductName(), Price: 23, Manufacturer: fake.Brand()}
 
-	mock.ExpectPrepare("INSERT INTO cart \\(name, price, manufacturer\\) VALUES \\(\\?, \\?, \\?\\)").
-		ExpectExec().
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT INTO cart \\(name, price, manufacturer\\) VALUES \\(\\?, \\?, \\?\\)").
 		WithArgs(item.Name, item.Price, item.Manufacturer).
 		WillReturnResult(sqlmock.NewResult(item.ID, 0))
-	mock.ExpectClose()
+	mock.ExpectCommit()
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -181,6 +198,10 @@ func Test_Cart_Repository_AddItem_ShouldReturnInsertedItem(t *testing.T) {
 
 	if result != item {
 		t.Fatalf("Unexpected item was given, '%+v'. Expected '%+v'.", result, item)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -194,11 +215,11 @@ func Test_Cart_Repository_AddItem_WhenErrorOccurs_ShouldReturnError(t *testing.T
 	item := Item{ID: 1, Name: fake.ProductName(), Price: 23, Manufacturer: fake.Brand()}
 	error := createError()
 
-	mock.ExpectPrepare("INSERT INTO cart \\(name, price, manufacturer\\) VALUES \\(\\?, \\?, \\?\\)").
-		ExpectExec().
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT INTO cart \\(name, price, manufacturer\\) VALUES \\(\\?, \\?, \\?\\)").
 		WithArgs(item.Name, item.Price, item.Manufacturer).
 		WillReturnError(error)
-	mock.ExpectClose()
+	mock.ExpectRollback()
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -206,6 +227,10 @@ func Test_Cart_Repository_AddItem_WhenErrorOccurs_ShouldReturnError(t *testing.T
 	_, err = sut.AddItem(ctx, &item)
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating failure while adding cart item", error, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -218,11 +243,11 @@ func Test_Cart_Repository_UpdateItem_ShouldUpdateSpecificItem(t *testing.T) {
 
 	item1 := Item{ID: 1, Name: fake.ProductName(), Price: 23, Manufacturer: fake.Brand()}
 
-	mock.ExpectPrepare("UPDATE cart SET name = \\?, price = \\?, manufacturer = \\? WHERE id = \\?").
-		ExpectExec().
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE cart SET name = \\?, price = \\?, manufacturer = \\? WHERE id = \\?").
 		WithArgs(item1.ID, item1.Name, item1.Price, item1.Manufacturer).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectClose()
+	mock.ExpectCommit()
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -234,6 +259,10 @@ func Test_Cart_Repository_UpdateItem_ShouldUpdateSpecificItem(t *testing.T) {
 
 	if result != item1 {
 		t.Fatalf("Unexpected item was given, '%+v'. Expected '%+v'.", result, item1)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -247,11 +276,11 @@ func Test_Cart_Repository_UpdateItem_WhenErrorOccurs_ShouldReturnError(t *testin
 	item1 := Item{ID: 1, Name: fake.ProductName(), Price: 23, Manufacturer: fake.Brand()}
 	error := createError()
 
-	mock.ExpectPrepare("UPDATE cart SET name = \\?, price = \\?, manufacturer = \\? WHERE id = \\?").
-		ExpectExec().
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE cart SET name = \\?, price = \\?, manufacturer = \\? WHERE id = \\?").
 		WithArgs(item1.ID, item1.Name, item1.Price, item1.Manufacturer).
 		WillReturnError(error)
-	mock.ExpectClose()
+	mock.ExpectRollback()
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -259,6 +288,10 @@ func Test_Cart_Repository_UpdateItem_WhenErrorOccurs_ShouldReturnError(t *testin
 	_, err = sut.UpdateItem(ctx, &item1)
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating failure while updating cart item", error, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -275,7 +308,6 @@ func Test_Cart_Repository_RemoveItem_ShouldReturnID(t *testing.T) {
 		ExpectExec().
 		WithArgs(item1ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectClose()
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -287,6 +319,10 @@ func Test_Cart_Repository_RemoveItem_ShouldReturnID(t *testing.T) {
 
 	if result != item1ID {
 		t.Fatalf("Unexpected id was given, '%d'. Expected '%d'.", result, item1ID)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
@@ -304,7 +340,6 @@ func Test_Cart_Repository_RemoveItem_WhenErrorOccurs_ShouldReturnError(t *testin
 		ExpectExec().
 		WithArgs(item1ID).
 		WillReturnError(error)
-	mock.ExpectClose()
 
 	sut := NewRepository(dbConn)
 	ctx := context.Background()
@@ -316,6 +351,10 @@ func Test_Cart_Repository_RemoveItem_WhenErrorOccurs_ShouldReturnError(t *testin
 
 	if error != err {
 		t.Fatalf("Expected failure '%s', but received '%s' when simulating failure while removing cart item", error, err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
