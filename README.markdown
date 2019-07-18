@@ -57,6 +57,46 @@ To run the server, run the following command:
 make run_server
 ```
 
+## Running Server
+
+To get the health endpoint, run the following command:
+```bash
+curl -X GET localhost:3000/ping
+```
+
+To get all cart items, run the following command:
+```bash
+curl -X GET localhost:3000/cart
+```
+
+To get a cart item by id, run the following command:
+```bash
+curl -X GET localhost:3000/cart/1
+```
+
+To add a cart item, run the following command:
+```bash
+curl \
+    -X POST \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "name=Lens&price=120000&manufacturer=Canon" \
+    localhost:3000/cart
+```
+
+To update a cart item, run the following command:
+```bash
+curl \
+    -X PUT \
+    -H "Content-Type: application/json" \
+    -d '{"name": "Lens Cap", "price": "1200", "manufacturer": "Canon"}' \
+    localhost:3000/cart/1
+```
+
+To remove a cart item, run the following command:
+```bash
+curl -X DELETE localhost:3000/cart/1
+```
+
 ## License
 
 ```
