@@ -26,9 +26,9 @@ To run all tests, run the following command:
 make test
 ```
 
-To run the local database, run the following command:
+To run tests for ci, run the following command:
 ```bash
-make run_local_db
+make ci_test
 ```
 
 To run migrations, run the following command:
@@ -46,14 +46,21 @@ To seed the database, run the following command:
 make seed_db
 ```
 
-To build the server, run the following command:
+To build the docker image, run the following command:
 ```bash
-make build_server
+make build_image
 ```
 
-To run the server, run the following command:
+To run the docker image, run the following command:
 ```bash
-make run_server
+make run_image
+```
+
+To push the docker image to dockerhub, run the following command:
+```bash
+REGISTRY_PASSWORD=<some-registry-password> \
+TAG=<some-build-tag> \
+make push_image
 ```
 
 ## Running Server
