@@ -67,9 +67,8 @@ jobs:
     - bash: make build_image
       displayName: Build Docker Image
       workingDirectory: $(modulePath)
-    - bash: REGISTRY_USERNAME=$(REGISTRY_USERNAME) REGISTRY_PASSWORD=$(REGISTRY_PASSWORD) TAG=$(VERSION_TAG) make push_image
+    - bash: REGISTRY_PASSWORD=$(REGISTRY_PASSWORD) TAG=$(VERSION_TAG) make push_image
       displayName: Push Docker Image to Dockerhub
       workingDirectory: $(modulePath)
       env:
-        REGISTRY_USERNAME: $(REGISTRY_USERNAME)
         REGISTRY_PASSWORD: $(REGISTRY_PASSWORD)

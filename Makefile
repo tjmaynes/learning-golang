@@ -8,6 +8,8 @@ CGO_ENABLED := 0
 TAG         := latest
 SEED_DATA_SOURCE := $(PWD)/db/seed.json
 PROJECT := github.com/tjmaynes/learning-golang
+REGISTRY_USERNAME := tjmaynes
+IMAGE_NAME := learning-golang
 
 install_dependencies:
 	GO111MODULE=on go get -u github.com/jstemmer/go-junit-report
@@ -58,7 +60,7 @@ run_server: build_server
 	./dist/lgserver
 
 build_image: guard-TAG
-	docker build -t tjmaynes/learning-golang-server:$(TAG) .
+	docker build -t $(REGISTRY_USERNAME)/$(IMAGE_NAME):$(TAG) .
 
 run_image:
 	docker run --rm \
@@ -67,10 +69,10 @@ run_image:
 	 --env SERVER_PORT=$(SERVER_PORT) \
 	 --volume $(PWD)/db:/db \
 	 --publish $(SERVER_PORT):$(SERVER_PORT) \
-	 tjmaynes/learning-golang-server:$(TAG)
+	 $(REGISTRY_USERNAME)/$(IMAGE_NAME):$(TAG)
 
-push_image: guard-REGISTRY_USERNAME guard-REGISTRY_PASSWORD guard-TAG
-	docker login -u --username "$(REGISTRY_USERNAME)" --password "$(REGISTRY_PASSWORD)"
+push_image: guard-REGISTRY_PASSWORD guard-TAG
+	docker login --username "$(REGISTRY_USERNAME)" --password "$(REGISTRY_PASSWORD)"
 	docker push $(REGISTRY_USERNAME)/$(IMAGE_NAME):$(TAG)
 
 clean:
