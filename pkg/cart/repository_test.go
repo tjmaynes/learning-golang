@@ -245,7 +245,7 @@ func Test_Cart_Repository_UpdateItem_ShouldUpdateSpecificItem(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE cart SET name = \\?, price = \\?, manufacturer = \\? WHERE id = \\?").
-		WithArgs(item1.ID, item1.Name, item1.Price, item1.Manufacturer).
+		WithArgs(item1.Name, item1.Price, item1.Manufacturer, item1.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -278,7 +278,7 @@ func Test_Cart_Repository_UpdateItem_WhenErrorOccurs_ShouldReturnError(t *testin
 
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE cart SET name = \\?, price = \\?, manufacturer = \\? WHERE id = \\?").
-		WithArgs(item1.ID, item1.Name, item1.Price, item1.Manufacturer).
+		WithArgs(item1.Name, item1.Price, item1.Manufacturer, item1.ID).
 		WillReturnError(error)
 	mock.ExpectRollback()
 

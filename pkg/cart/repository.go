@@ -117,7 +117,7 @@ func (r *repository) UpdateItem(ctx context.Context, item *Item) (Item, error) {
 		return Item{}, err
 	}
 
-	_, err = tx.ExecContext(ctx, "UPDATE cart SET name = ?, price = ?, manufacturer = ? WHERE id = ?", item.ID, item.Name, item.Price, item.Manufacturer)
+	_, err = tx.ExecContext(ctx, "UPDATE cart SET name = ?, price = ?, manufacturer = ? WHERE id = ?", item.Name, item.Price, item.Manufacturer, item.ID)
 	if err != nil {
 		tx.Rollback()
 		return Item{}, err
