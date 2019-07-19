@@ -60,9 +60,6 @@ jobs:
       displayName: Setup Go Workspace
     - script: VERSION_TAG=`git describe --tags` && echo "##vso[task.setvariable variable=VERSION_TAG]$VERSION_TAG"
       displayName: Set the tag name as an Environment Variable
-    - bash: make install_dependencies
-      displayName: Install Dependencies
-      workingDirectory: $(modulePath)
     - bash: make build_image
       displayName: Build Docker Image
       workingDirectory: $(modulePath)
