@@ -41,7 +41,6 @@ jobs:
       inputs:
         codeCoverageTool: cobertura
         summaryFileLocation: $(modulePath)/coverage.xml
-        reportDirectory: $(modulePath)/coverage
 - job: BuildAndPublishArtifact
   dependsOn: RunTests
   displayName: Build and Publish Artifact
