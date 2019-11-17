@@ -12,13 +12,18 @@ REGISTRY_USERNAME := tjmaynes
 IMAGE_NAME := learning-golang
 
 install_dependencies:
-	GO111MODULE=on go get ./...
+	go get github.com/amacneil/dbmate@v1.6.0
+	go get github.com/jstemmer/go-junit-report
+	go get github.com/matryer/moq
+	go get github.com/axw/gocov/gocov
+	go get github.com/AlekSi/gocov-xml
+	go get github.com/matm/gocov-html
 
 generate_mocks:
 	moq -out pkg/cart/repository_mock.go pkg/cart Repository
 
 generate_seed_data:
-	GO111MODULE=on go run ./cmd/lggenseeddata \
+	go run ./cmd/lggenseeddata \
 	--seed-data-destination=$(SEED_DATA_SOURCE) \
 	--item-count=100 \
 	--manufacturer-count=5
@@ -28,7 +33,7 @@ test:
 	DB_SOURCE=$(DB_SOURCE) \
 	SERVER_PORT=$(SERVER_PORT) \
 	SEED_DATA_SOURCE=$(SEED_DATA_SOURCE) \
-	GO111MODULE=on go test -race -v -coverprofile=coverage.txt ./...
+	go test -race -v -coverprofile=coverage.txt ./...
 
 ci_test:
 	make test 2>&1 | go-junit-report > report.xml
@@ -40,13 +45,13 @@ run_migrations:
 	DATABASE_URL=sqlite:///$(DB_SOURCE) dbmate up
 
 seed_db:
-	GO111MODULE=on go run ./cmd/lgseed \
+	go run ./cmd/lgseed \
 	--db-type=$(DB_TYPE) \
 	--db-source=$(DB_SOURCE) \
 	--seed-data-source=$(SEED_DATA_SOURCE)
 
 build_server:
-	GO111MODULE=on go build -o dist/lgserver ./cmd/lgserver
+	go build -o dist/lgserver ./cmd/lgserver
 
 run_server: build_server
 	DB_TYPE=$(DB_TYPE) \

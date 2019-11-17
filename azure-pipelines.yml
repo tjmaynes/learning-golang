@@ -1,7 +1,7 @@
 variables:
-  GOBIN:  "$(GOPATH)/bin"
-  GOROOT: "/usr/local/go1.12"
-  GOPATH: "$(system.defaultWorkingDirectory)/go"
+  GOPATH: "$(Agent.BuildDirectory)/gopath"
+  GOROOT: "$(Agent.BuildDirectory)/go"
+  GOBIN:  "$(GOPATH)/bin" 
   modulePath: "$(GOPATH)/src/github.com/$(build.repository.name)"
 
 jobs:
@@ -11,13 +11,14 @@ jobs:
     vmImage: "ubuntu-16.04"
   steps:
     - script: |
+        wget "https://storage.googleapis.com/golang/go1.13.4.linux-amd64.tar.gz" --output-document "$(Agent.BuildDirectory)/go1.13.4.tar.gz"
+        tar -C '$(Agent.BuildDirectory)' -xzf "$(Agent.BuildDirectory)/go1.13.4.tar.gz"
         mkdir -p "$(GOBIN)"
         mkdir -p "$(GOPATH)/pkg"
         mkdir -p "$(modulePath)"
         echo "Moving $(system.defaultWorkingDirectory)/* To $(modulePath)"
         mv $(system.defaultWorkingDirectory)/* $(modulePath)
         shopt -s extglob
-        mv !(go) "$(modulePath)"
         echo "##vso[task.prependpath]$(GOBIN)"
         echo "##vso[task.prependpath]$(GOROOT)/bin"
       displayName: Setup Go Workspace
