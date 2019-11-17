@@ -12,12 +12,7 @@ REGISTRY_USERNAME := tjmaynes
 IMAGE_NAME := learning-golang
 
 install_dependencies:
-	GO111MODULE=on go get -u github.com/jstemmer/go-junit-report
-	GO111MODULE=on go get -u github.com/amacneil/dbmate
-	GO111MODULE=on go get -u github.com/matryer/moq
-	GO111MODULE=on go get -u github.com/axw/gocov/gocov
-	GO111MODULE=on go get -u github.com/AlekSi/gocov-xml
-	GO111MODULE=on go get -u github.com/matm/gocov-html
+	GO111MODULE=on go get ./...
 
 generate_mocks:
 	moq -out pkg/cart/repository_mock.go pkg/cart Repository
